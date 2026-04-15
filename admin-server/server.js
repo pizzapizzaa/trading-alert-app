@@ -35,10 +35,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ─── Commodities ─────────────────────────────────────────────────────────────
 
 const COMMODITIES = [
-  { symbol: 'XAU', name: 'Gold',      yahooKey: 'GC=F', color: '#F5A623' },
-  { symbol: 'XAG', name: 'Silver',    yahooKey: 'SI=F', color: '#A8A8A8' },
-  { symbol: 'XPT', name: 'Platinum',  yahooKey: 'PL=F', color: '#E5E4E2' },
-  { symbol: 'XPD', name: 'Palladium', yahooKey: 'PA=F', color: '#9090A0' },
+  { symbol: 'XAU', name: 'Gold',       yahooKey: 'GC=F', color: '#F5A623' },
+  { symbol: 'XAG', name: 'Silver',     yahooKey: 'SI=F', color: '#A8A8A8' },
+  { symbol: 'XPT', name: 'Platinum',   yahooKey: 'PL=F', color: '#E5E4E2' },
+  { symbol: 'XPD', name: 'Palladium',  yahooKey: 'PA=F', color: '#9090A0' },
+  { symbol: 'oil', name: 'Crude Oil',  yahooKey: 'CL=F', color: '#4A3224' },
 ];
 
 // ─── Price fetching ───────────────────────────────────────────────────────────
