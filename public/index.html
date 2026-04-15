@@ -702,28 +702,6 @@
   }
 
   // ── Live ticker ──
-  const TICKER_COMMODITIES = [
-    { label: 'GOLD (XAU/USD)',      ticker: 'GC=F' },
-    { label: 'SILVER (XAG/USD)',    ticker: 'SI=F' },
-    { label: 'PLATINUM (XPT/USD)', ticker: 'PL=F' },
-    { label: 'PALLADIUM (XPD/USD)',ticker: 'PA=F' },
-    { label: 'CRUDE OIL (CL1)',    ticker: 'CL=F' },
-  ];
-
-  async function fetchTickerPrice(ticker) {
-    const encoded = encodeURIComponent(ticker);
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encoded}?range=1d&interval=1m`;
-    const res = await fetch(url, { headers: { Accept: 'application/json' } });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const json = await res.json();
-    const meta = json?.chart?.result?.[0]?.meta;
-    if (!meta) throw new Error('no meta');
-    const price = meta.regularMarketPrice;
-    const prevClose = meta.chartPreviousClose ?? meta.previousClose ?? price;
-    const changePct = prevClose ? ((price - prevClose) / prevClose) * 100 : 0;
-    return { price, changePct };
-  }
-
   function buildTickerItem(label, price, changePct) {
     const up = changePct >= 0;
     const arrow = up ? '▲' : '▼';
@@ -734,16 +712,19 @@
   }
 
   async function loadTicker() {
-    const results = await Promise.allSettled(
-      TICKER_COMMODITIES.map(c => fetchTickerPrice(c.ticker).then(d => ({ ...c, ...d })))
-    );
+    let prices;
+    try {
+      const res = await fetch('/api/prices');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      prices = await res.json();
+    } catch (e) {
+      console.warn('[Ticker] Failed to load prices:', e);
+      return;
+    }
 
-    const items = results
-      .filter(r => r.status === 'fulfilled')
-      .map(r => buildTickerItem(r.value.label, r.value.price, r.value.changePct));
+    if (!prices.length) return;
 
-    if (items.length === 0) return; // keep existing content on total failure
-
+    const items = prices.map(p => buildTickerItem(p.label, p.price, p.changePct));
     const track = document.getElementById('tickerTrack');
     // Double the items for a seamless infinite scroll loop
     track.innerHTML = items.join('') + items.join('');
