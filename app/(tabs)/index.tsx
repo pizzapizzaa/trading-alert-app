@@ -45,11 +45,6 @@ export default function DashboardScreen() {
     ? `${isUp ? '▲' : '▼'} ${Math.abs(selectedPriceData.changePercent).toFixed(2)}%`
     : '—';
 
-  const lastUpdated =
-    prices && prices.length > 0
-      ? new Date(prices[0].lastUpdated).toLocaleTimeString()
-      : null;
-
   return (
     <View style={styles.container}>
       <ScrollView
@@ -62,15 +57,6 @@ export default function DashboardScreen() {
           />
         }
       >
-        {/* Hero banner */}
-        <View style={styles.heroBanner}>
-          <Text style={styles.heroTitle}>Spot Prices</Text>
-          <Text style={styles.heroSub}>Live · USD spot prices</Text>
-          {lastUpdated ? (
-            <Text style={styles.heroTime}>Last updated: {lastUpdated}</Text>
-          ) : null}
-        </View>
-
         {/* Live price chart */}
         <View style={styles.chartCard}>
           {/* Header: name + price */}
@@ -224,29 +210,6 @@ const styles = StyleSheet.create({
   },
   scroll: {
     padding: 16,
-  },
-  heroBanner: {
-    backgroundColor: Colors.surfaceElevated,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: Colors.goldDark + '55',
-  },
-  heroTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-  },
-  heroSub: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    marginTop: 4,
-  },
-  heroTime: {
-    fontSize: 12,
-    color: Colors.textMuted,
-    marginTop: 8,
   },
   alertChip: {
     backgroundColor: Colors.gold + '22',
