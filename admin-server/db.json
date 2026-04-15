@@ -1,0 +1,15 @@
+{
+  "devices": [],
+  "alerts": [
+    {
+      "id": "alert_1776239994658_vsqe6",
+      "name": "gold under 4950",
+      "symbol": "XAU",
+      "conditionType": "price_below",
+      "targetValue": 4950,
+      "active": true,
+      "createdAt": "2026-04-15T07:59:54.658Z"
+    }
+  ],
+  "history": []
+}

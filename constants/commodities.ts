@@ -12,9 +12,12 @@ export interface Commodity {
   name: string;
   unit: string;
   color: string;
-  emoji: string;
+  /** Reserved for future SVG icon — set to empty string until icons are provided */
+  icon: string;
   /** key in the Metals.live response */
   apiKey: string;
+  /** Yahoo Finance futures ticker for historical OHLC data */
+  yahooKey: string;
 }
 
 export const COMMODITIES: Commodity[] = [
@@ -23,32 +26,36 @@ export const COMMODITIES: Commodity[] = [
     name: 'Gold',
     unit: 'troy oz',
     color: '#F5A623',
-    emoji: '🥇',
+    icon: '',
     apiKey: 'gold',
+    yahooKey: 'GC=F',
   },
   {
     symbol: 'XAG',
     name: 'Silver',
     unit: 'troy oz',
     color: '#A8A8A8',
-    emoji: '🥈',
+    icon: '',
     apiKey: 'silver',
+    yahooKey: 'SI=F',
   },
   {
     symbol: 'XPT',
     name: 'Platinum',
     unit: 'troy oz',
     color: '#E5E4E2',
-    emoji: '💎',
+    icon: '',
     apiKey: 'platinum',
+    yahooKey: 'PL=F',
   },
   {
     symbol: 'XPD',
     name: 'Palladium',
     unit: 'troy oz',
     color: '#9090A0',
-    emoji: '⚙️',
+    icon: '',
     apiKey: 'palladium',
+    yahooKey: 'PA=F',
   },
 ];
 

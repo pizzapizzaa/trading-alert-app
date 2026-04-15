@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,23 +7,43 @@ import {
   RefreshControl,
   Pressable,
   ActivityIndicator,
+  useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/colors';
+import { COMMODITIES, type CommoditySymbol } from '@/constants/commodities';
 import { usePrices } from '@/hooks/usePrices';
+import { usePriceHistory } from '@/hooks/usePriceHistory';
 import { useAlertEvaluator } from '@/hooks/useAlertEvaluator';
 import { PriceCard } from '@/components/PriceCard';
+import { PriceChart } from '@/components/PriceChart';
 import { useAlertsStore } from '@/store/alertsStore';
 import { scheduleLocalNotification } from '@/services/notificationService';
 
 export default function DashboardScreen() {
   const router = useRouter();
+  const { width: windowWidth } = useWindowDimensions();
   const { data: prices, isLoading, isError, refetch, isFetching } = usePrices(30_000);
   const alerts = useAlertsStore((s) => s.alerts);
   const activeAlerts = alerts.filter((a) => a.active);
 
   // Evaluate alerts in the foreground whenever prices update
   useAlertEvaluator(prices);
+
+  const [selectedSymbol, setSelectedSymbol] = useState<CommoditySymbol>('XAU');
+  const priceHistory = usePriceHistory(prices);
+
+  const selectedCommodity = COMMODITIES.find((c) => c.symbol === selectedSymbol) ?? COMMODITIES[0];
+  const selectedPriceData = prices?.find((p) => p.symbol === selectedSymbol) ?? null;
+  const chartData = priceHistory[selectedSymbol] ?? [];
+  // 16px scroll padding × 2 + 16px card padding × 2
+  const chartWidth = windowWidth - 64;
+
+  const isUp = (selectedPriceData?.changePercent ?? 0) >= 0;
+  const changeColor = isUp ? Colors.green : Colors.red;
+  const changeText = selectedPriceData
+    ? `${isUp ? '▲' : '▼'} ${Math.abs(selectedPriceData.changePercent).toFixed(2)}%`
+    : '—';
 
   const lastUpdated =
     prices && prices.length > 0
@@ -49,6 +69,73 @@ export default function DashboardScreen() {
           {lastUpdated ? (
             <Text style={styles.heroTime}>Last updated: {lastUpdated}</Text>
           ) : null}
+        </View>
+
+        {/* Live price chart */}
+        <View style={styles.chartCard}>
+          {/* Header: name + price */}
+          <View style={styles.chartHeader}>
+            <View style={styles.chartNameRow}>
+              <Text style={styles.chartCommodityName}>
+                {selectedCommodity.name}
+              </Text>
+              <Text style={styles.chartUnit}>{selectedCommodity.unit}</Text>
+            </View>
+            <View style={styles.chartPriceRow}>
+              {selectedPriceData ? (
+                <>
+                  <Text style={styles.chartPrice}>
+                    ${selectedPriceData.price.toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </Text>
+                  <Text style={[styles.chartChange, { color: changeColor }]}>
+                    {changeText}
+                  </Text>
+                </>
+              ) : (
+                <Text style={styles.chartPrice}>—</Text>
+              )}
+            </View>
+          </View>
+
+          {/* Chart */}
+          <PriceChart
+            data={chartData}
+            color={selectedCommodity.color}
+            width={chartWidth}
+          />
+
+          {/* Commodity selector pills */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.pillsContainer}
+          >
+            {COMMODITIES.map((c) => (
+              <Pressable
+                key={c.symbol}
+                style={[
+                  styles.pill,
+                  selectedSymbol === c.symbol && {
+                    backgroundColor: c.color + '22',
+                    borderColor: c.color,
+                  },
+                ]}
+                onPress={() => setSelectedSymbol(c.symbol)}
+              >
+                <Text
+                  style={[
+                    styles.pillText,
+                    selectedSymbol === c.symbol && { color: c.color },
+                  ]}
+                >
+                  {c.name}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
         </View>
 
         {/* Active alert count chip */}
@@ -228,6 +315,64 @@ const styles = StyleSheet.create({
   },
   bottomPad: {
     height: 20,
+  },
+  chartCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  chartHeader: {
+    marginBottom: 12,
+  },
+  chartNameRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 6,
+    marginBottom: 4,
+  },
+  chartCommodityName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  chartUnit: {
+    fontSize: 11,
+    color: Colors.textMuted,
+  },
+  chartPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 10,
+  },
+  chartPrice: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+  },
+  chartChange: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  pillsContainer: {
+    gap: 8,
+    paddingTop: 14,
+    paddingBottom: 2,
+  },
+  pill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: Colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  pillText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.textSecondary,
   },
   testBtn: {
     backgroundColor: Colors.surfaceElevated,

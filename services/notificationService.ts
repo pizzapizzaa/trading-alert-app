@@ -18,8 +18,9 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
     });
   }
 
-  const appIsOnDevice =
-    Constants.executionEnvironment !== 'storeClient';
+  // appOwnership === 'expo' means running inside Expo Go (SDK 53+).
+  // Remote push notifications are not supported there; skip token fetch.
+  const isExpoGo = Constants.appOwnership === 'expo';
 
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
@@ -34,15 +35,17 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
     return null;
   }
 
-  try {
-    if (appIsOnDevice && Constants.expoConfig?.extra?.eas?.projectId) {
-      const expoPushToken = await Notifications.getExpoPushTokenAsync({
-        projectId: Constants.expoConfig.extra.eas.projectId,
-      });
-      token = expoPushToken.data;
+  if (!isExpoGo) {
+    try {
+      if (Constants.expoConfig?.extra?.eas?.projectId) {
+        const expoPushToken = await Notifications.getExpoPushTokenAsync({
+          projectId: Constants.expoConfig.extra.eas.projectId,
+        });
+        token = expoPushToken.data;
+      }
+    } catch {
+      // Token retrieval not critical for local notifications
     }
-  } catch {
-    // Token retrieval not critical for local notifications
   }
 
   return token;

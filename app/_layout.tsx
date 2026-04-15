@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { configureNotificationBehaviour, registerForPushNotificationsAsync } from '@/services/notificationService';
 import { registerBackgroundTask } from '@/services/backgroundTask';
 import { useAlertsStore } from '@/store/alertsStore';
+import { registerDeviceWithAdmin } from '@/services/adminService';
 import { Colors } from '@/constants/colors';
 
 const queryClient = new QueryClient();
@@ -17,8 +18,10 @@ export default function RootLayout() {
   useEffect(() => {
     // Load persisted alerts on mount
     loadFromStorage();
-    // Request notification permissions
-    registerForPushNotificationsAsync();
+    // Request notification permissions and register device with admin panel
+    registerForPushNotificationsAsync().then((token) => {
+      if (token) registerDeviceWithAdmin(token);
+    });
     // Register background price-check task
     registerBackgroundTask();
   }, [loadFromStorage]);

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useAlertsStore, type Alert } from '@/store/alertsStore';
 import { scheduleLocalNotification } from '@/services/notificationService';
+import { sendSmsAlert } from '@/services/smsService';
 import { saveTriggeredAlert } from '@/store/alertsStorage';
 import type { PriceData } from '@/services/priceService';
 
@@ -81,6 +82,12 @@ export function useAlertEvaluator(prices: PriceData[] | undefined) {
             symbol: alert.symbol,
             price,
           });
+
+          if (alert.smsEnabled && alert.smsPhone) {
+            sendSmsAlert(alert.smsPhone, `[GoldTracker] ${message}`).catch((err) =>
+              console.warn('[useAlertEvaluator] SMS send failed:', err)
+            );
+          }
 
           await saveTriggeredAlert({
             id: `${alert.id}-${Date.now()}`,

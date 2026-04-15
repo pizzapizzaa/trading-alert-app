@@ -9,6 +9,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Switch,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/colors';
@@ -35,6 +36,8 @@ export default function AddAlertScreen() {
   const [symbol, setSymbol] = useState<CommoditySymbol>(defaultSymbol);
   const [conditionType, setConditionType] = useState<AlertConditionType>('price_above');
   const [targetValue, setTargetValue] = useState('');
+  const [smsEnabled, setSmsEnabled] = useState(false);
+  const [smsPhone, setSmsPhone] = useState('');
 
   const selectedCondition = CONDITIONS.find((c) => c.value === conditionType)!;
   const isPercentCondition = conditionType.includes('percent');
@@ -51,6 +54,10 @@ export default function AddAlertScreen() {
       Alert.alert('Validation', 'Please enter a valid positive number for the target value.');
       return;
     }
+    if (smsEnabled && smsPhone.replace(/[^\d]/g, '').length < 7) {
+      Alert.alert('Validation', 'Please enter a valid phone number for SMS alerts.');
+      return;
+    }
 
     await addAlert({
       name: trimmedName,
@@ -58,6 +65,8 @@ export default function AddAlertScreen() {
       conditionType,
       targetValue: parsed,
       active: true,
+      smsEnabled,
+      smsPhone: smsPhone.trim(),
     });
 
     router.back();
@@ -99,7 +108,6 @@ export default function AddAlertScreen() {
                 ]}
                 onPress={() => setSymbol(c.symbol)}
               >
-                <Text style={styles.pillEmoji}>{c.emoji}</Text>
                 <Text
                   style={[
                     styles.pillText,
@@ -175,6 +183,35 @@ export default function AddAlertScreen() {
               <Text style={styles.inputSuffix}>%</Text>
             )}
           </View>
+        </View>
+
+        {/* SMS Alert */}
+        <View style={styles.section}>
+          <Text style={styles.label}>SMS Alert</Text>
+          <View style={styles.smsToggleRow}>
+            <View style={styles.smsToggleLeft}>
+              <Text style={styles.smsToggleTitle}>Send SMS when triggered</Text>
+              <Text style={styles.smsToggleSub}>Free via TextBelt · 1 SMS/day</Text>
+            </View>
+            <Switch
+              value={smsEnabled}
+              onValueChange={setSmsEnabled}
+              trackColor={{ false: Colors.border, true: Colors.gold + '99' }}
+              thumbColor={smsEnabled ? Colors.gold : Colors.textMuted}
+            />
+          </View>
+          {smsEnabled && (
+            <TextInput
+              style={[styles.input, { marginTop: 12 }]}
+              placeholder="Phone number (e.g. +14155552671)"
+              placeholderTextColor={Colors.textMuted}
+              value={smsPhone}
+              onChangeText={setSmsPhone}
+              keyboardType="phone-pad"
+              returnKeyType="done"
+              autoComplete="tel"
+            />
+          )}
         </View>
 
         {/* Submit */}
@@ -336,5 +373,30 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '800',
     color: Colors.black,
+  },
+  smsToggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  smsToggleLeft: {
+    flex: 1,
+    marginRight: 12,
+  },
+  smsToggleTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+  },
+  smsToggleSub: {
+    fontSize: 12,
+    color: Colors.textMuted,
+    marginTop: 2,
   },
 });

@@ -26,6 +26,10 @@ export interface Alert {
   createdAt: string;
   /** ISO string of last trigger, null if never triggered */
   lastTriggeredAt: string | null;
+  /** Whether to send an SMS when this alert triggers */
+  smsEnabled: boolean;
+  /** Phone number to send SMS to (E.164 preferred, e.g. "+14155552671") */
+  smsPhone: string;
 }
 
 export interface HistoryEntry {
@@ -76,6 +80,8 @@ export const useAlertsStore = create<AlertsState>((set, get) => ({
       id: `alert_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       createdAt: new Date().toISOString(),
       lastTriggeredAt: null,
+      smsEnabled: alertData.smsEnabled ?? false,
+      smsPhone: alertData.smsPhone ?? '',
     };
     const updated = [...get().alerts, newAlert];
     set({ alerts: updated });
