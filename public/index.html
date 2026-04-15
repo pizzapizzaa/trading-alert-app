@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GoldTracker — Precious Metal Price Alerts</title>
+<meta name="description" content="Real-time gold, silver, platinum and palladium price alerts in your pocket. Get notified the moment prices hit your targets." />
+<style>
+  :root {
+    --bg: #0A0A0A;
+    --surface: #141414;
+    --elevated: #1E1E1E;
+    --border: #2A2A2A;
+    --gold: #F5A623;
+    --gold-light: #FFD166;
+    --gold-dark: #C17D0A;
+    --silver: #C0C0C0;
+    --green: #2ECC71;
+    --text: #FFFFFF;
+    --text-sec: #AAAAAA;
+    --text-muted: #555555;
+    --radius: 16px;
+    --max: 1080px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── Layout helpers ── */
+  .container { max-width: var(--max); margin: 0 auto; padding: 0 24px; }
+  .section { padding: 96px 0; }
+  .section-sm { padding: 64px 0; }
+
+  /* ── Nav ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 16px 0;
+    border-bottom: 1px solid transparent;
+    transition: all 0.3s;
+    backdrop-filter: blur(0px);
+  }
+  nav.scrolled {
+    background: rgba(10,10,10,0.92);
+    border-bottom-color: var(--border);
+    backdrop-filter: blur(20px);
+  }
+  .nav-inner {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-logo {
+    font-size: 20px; font-weight: 800; color: var(--gold);
+    text-decoration: none; letter-spacing: -0.5px;
+  }
+  .nav-logo span { color: var(--text); font-weight: 400; }
+  .nav-links { display: flex; align-items: center; gap: 8px; }
+  .nav-link {
+    color: var(--text-sec); text-decoration: none; font-size: 14px;
+    padding: 8px 14px; border-radius: 8px; transition: color 0.15s, background 0.15s;
+  }
+  .nav-link:hover { color: var(--text); background: var(--elevated); }
+  .nav-cta {
+    background: var(--gold); color: #000; font-weight: 700; font-size: 14px;
+    padding: 9px 20px; border-radius: 10px; text-decoration: none;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .nav-cta:hover { opacity: 0.88; transform: translateY(-1px); }
+
+  /* ── Hero ── */
+  .hero {
+    min-height: 100vh;
+    display: flex; align-items: center;
+    padding-top: 80px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -200px; left: 50%; transform: translateX(-50%);
+    width: 800px; height: 800px;
+    background: radial-gradient(circle, rgba(245,166,35,0.12) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .hero-inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 64px; align-items: center;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(245,166,35,0.12); border: 1px solid rgba(245,166,35,0.25);
+    color: var(--gold); font-size: 13px; font-weight: 600;
+    padding: 6px 14px; border-radius: 20px; margin-bottom: 24px;
+  }
+  .hero-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--gold); display: block; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+  
+  .hero-title {
+    font-size: clamp(40px, 5vw, 62px);
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -2px;
+    margin-bottom: 20px;
+  }
+  .hero-title .gold-text {
+    background: linear-gradient(90deg, var(--gold) 0%, var(--gold-light) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero-sub {
+    font-size: 18px; color: var(--text-sec); line-height: 1.7;
+    margin-bottom: 40px; max-width: 480px;
+  }
+  .hero-actions { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 48px; }
+
+  .btn-dl {
+    display: inline-flex; align-items: center; gap: 12px;
+    padding: 14px 24px; border-radius: 14px;
+    font-size: 15px; font-weight: 700; text-decoration: none;
+    transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+    border: none; cursor: pointer;
+  }
+  .btn-dl:hover { transform: translateY(-2px); opacity: 0.9; }
+  .btn-dl-android {
+    background: var(--gold); color: #000;
+    box-shadow: 0 8px 30px rgba(245,166,35,0.3);
+  }
+  .btn-dl-ios {
+    background: var(--elevated); color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-dl-icon { font-size: 22px; }
+  .btn-dl-text { display: flex; flex-direction: column; line-height: 1.2; }
+  .btn-dl-text small { font-size: 11px; font-weight: 500; opacity: 0.75; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .hero-stats { display: flex; gap: 36px; }
+  .stat { }
+  .stat-num { font-size: 28px; font-weight: 800; color: var(--gold); }
+  .stat-lbl { font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+  /* ── Phone mockup ── */
+  .phone-wrap {
+    display: flex;
+    justify-content: center;
+    position: relative;
+  }
+  .phone-glow {
+    position: absolute;
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 320px; height: 320px;
+    background: radial-gradient(circle, rgba(245,166,35,0.18) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .phone {
+    width: 260px;
+    background: #1A1A1A;
+    border: 2px solid #333;
+    border-radius: 40px;
+    padding: 20px 16px;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+    position: relative;
+    z-index: 1;
+  }
+  .phone-notch {
+    width: 80px; height: 10px;
+    background: #333; border-radius: 5px;
+    margin: 0 auto 16px;
+  }
+  .phone-screen { border-radius: 20px; overflow: hidden; }
+
+  /* Fake app UI inside phone */
+  .app-header {
+    background: #111; padding: 10px 12px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .app-header-title { font-size: 13px; font-weight: 800; color: var(--gold); }
+  .app-header-live { font-size: 9px; color: var(--green); font-weight: 700;
+    border: 1px solid rgba(46,204,113,0.4); padding: 2px 6px; border-radius: 10px; }
+
+  .app-price-cards { background: #0D0D0D; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+  .app-price-card {
+    background: #1A1A1A; border-radius: 10px; padding: 8px 10px;
+    display: flex; justify-content: space-between; align-items: center;
+    border: 1px solid #2A2A2A;
+  }
+  .app-price-card-name { font-size: 10px; font-weight: 700; }
+  .app-price-card-val { font-size: 12px; font-weight: 800; color: var(--text); }
+  .app-price-card-chg { font-size: 9px; color: var(--green); font-weight: 600; }
+
+  .app-chart-area {
+    background: #0D0D0D; padding: 8px;
+  }
+  .app-chart-card {
+    background: #1A1A1A; border-radius: 10px; padding: 10px;
+    border: 1px solid #2A2A2A;
+  }
+  .app-chart-title { font-size: 9px; color: #888; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; }
+  .chart-svg-wrap { width: 100%; height: 60px; }
+
+  /* ── Ticker bar ── */
+  .ticker {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 0; overflow: hidden;
+  }
+  .ticker-track {
+    display: flex; gap: 48px;
+    animation: tickerScroll 20s linear infinite;
+    white-space: nowrap;
+    width: max-content;
+  }
+  @keyframes tickerScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  .ticker-item { display: flex; align-items: center; gap: 10px; }
+  .ticker-name { font-size: 13px; color: var(--text-muted); font-weight: 700; }
+  .ticker-price { font-size: 14px; font-weight: 700; color: var(--text); }
+  .ticker-change { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+  .tc-up { color: var(--green); background: rgba(46,204,113,0.1); }
+  .tc-down { color: #E74C3C; background: rgba(231,76,60,0.1); }
+
+  /* ── Features ── */
+  .section-label {
+    font-size: 12px; font-weight: 700; color: var(--gold);
+    text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px;
+  }
+  .section-title {
+    font-size: clamp(30px, 4vw, 44px); font-weight: 900;
+    letter-spacing: -1.5px; line-height: 1.15; margin-bottom: 16px;
+  }
+  .section-sub { font-size: 17px; color: var(--text-sec); max-width: 560px; line-height: 1.7; }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 52px;
+  }
+  .feature-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .feature-card:hover { border-color: rgba(245,166,35,0.35); transform: translateY(-4px); }
+  .feature-icon {
+    width: 48px; height: 48px;
+    background: rgba(245,166,35,0.1);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; margin-bottom: 20px;
+  }
+  .feature-title { font-size: 17px; font-weight: 800; margin-bottom: 8px; }
+  .feature-desc { font-size: 14px; color: var(--text-sec); line-height: 1.65; }
+
+  /* ── How it works ── */
+  .how-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+    margin-top: 52px;
+  }
+  .step {
+    text-align: center;
+    padding: 36px 24px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    position: relative;
+  }
+  .step-num {
+    width: 40px; height: 40px;
+    background: var(--gold); color: #000;
+    border-radius: 50%; font-size: 18px; font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+  }
+  .step-title { font-size: 18px; font-weight: 800; margin-bottom: 10px; }
+  .step-desc { font-size: 14px; color: var(--text-sec); line-height: 1.65; }
+
+  /* ── Commodities ── */
+  .commodity-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 52px;
+  }
+  .commodity-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 22px;
+    text-align: center;
+  }
+  .commodity-symbol {
+    font-size: 13px; font-weight: 800; letter-spacing: 1px;
+    text-transform: uppercase; margin-bottom: 8px;
+  }
+  .commodity-name { font-size: 22px; font-weight: 900; color: var(--text); margin-bottom: 4px; }
+  .commodity-unit { font-size: 12px; color: var(--text-muted); }
+
+  /* ── Download section ── */
+  .download-section {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .download-section::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%; transform: translate(-50%,-50%);
+    width: 700px; height: 500px;
+    background: radial-gradient(ellipse, rgba(245,166,35,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .download-title {
+    font-size: clamp(32px, 4vw, 50px); font-weight: 900;
+    letter-spacing: -1.5px; margin-bottom: 16px; position: relative;
+  }
+  .download-sub {
+    font-size: 17px; color: var(--text-sec); margin-bottom: 44px; position: relative;
+  }
+  .download-btns { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; position: relative; }
+  .download-note {
+    margin-top: 20px; font-size: 13px; color: var(--text-muted); position: relative;
+  }
+
+  /* ── Admin CTA ── */
+  .admin-cta-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px 36px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-top: 52px;
+  }
+  .admin-cta-text .label { font-size: 12px; color: var(--gold); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .admin-cta-text h3 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+  .admin-cta-text p { font-size: 14px; color: var(--text-sec); max-width: 480px; }
+  .btn-admin {
+    background: var(--elevated); color: var(--gold);
+    border: 1px solid rgba(245,166,35,0.3);
+    padding: 13px 26px; border-radius: 12px;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    text-decoration: none; white-space: nowrap;
+    transition: background 0.15s, transform 0.1s;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-admin:hover { background: rgba(245,166,35,0.1); transform: translateY(-1px); }
+
+  /* ── Footer ── */
+  footer {
+    padding: 48px 0 36px;
+    border-top: 1px solid var(--border);
+  }
+  .footer-inner {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+  }
+  .footer-brand { font-size: 18px; font-weight: 800; color: var(--gold); }
+  .footer-links { display: flex; gap: 24px; }
+  .footer-link { color: var(--text-muted); text-decoration: none; font-size: 13px; transition: color 0.15s; }
+  .footer-link:hover { color: var(--text-sec); }
+  .footer-copy { color: var(--text-muted); font-size: 13px; margin-top: 20px; }
+
+  /* ── Divider ── */
+  .divider { height: 1px; background: var(--border); margin: 0; }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    .hero-inner { grid-template-columns: 1fr; text-align: center; }
+    .hero-sub { margin: 0 auto 40px; }
+    .hero-actions { justify-content: center; }
+    .hero-stats { justify-content: center; }
+    .phone-wrap { display: none; }
+    .features-grid { grid-template-columns: 1fr 1fr; }
+    .commodity-grid { grid-template-columns: 1fr 1fr; }
+    .how-grid { grid-template-columns: 1fr; }
+    .admin-cta-card { flex-direction: column; text-align: center; }
+    .admin-cta-text p { max-width: none; }
+  }
+  @media (max-width: 600px) {
+    .features-grid { grid-template-columns: 1fr; }
+    .commodity-grid { grid-template-columns: 1fr 1fr; }
+    .nav-links .nav-link { display: none; }
+    .section { padding: 72px 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<nav id="nav">
+  <div class="container">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">Gold<span>Tracker</span></a>
+      <div class="nav-links">
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#commodities" class="nav-link">Commodities</a>
+        <a href="#download" class="nav-link">Download</a>
+        <a href="/admin" class="nav-cta">Admin Panel →</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Hero ── -->
+<section class="hero" id="home">
+  <div class="container">
+    <div class="hero-inner">
+      <div>
+        <div class="hero-badge">Live Precious Metal Alerts</div>
+        <h1 class="hero-title">
+          Never miss a<br />
+          <span class="gold-text">gold price move</span><br />
+          again.
+        </h1>
+        <p class="hero-sub">
+          Real-time alerts for gold, silver, platinum and palladium.
+          Set your targets — get notified the moment prices cross them,
+          via push notification or SMS.
+        </p>
+        <div class="hero-actions">
+          <!-- Update href values once APK/iOS builds are available -->
+          <a href="#download" class="btn-dl btn-dl-android">
+            <span class="btn-dl-icon">⬇</span>
+            <span class="btn-dl-text">
+              <small>Download for</small>
+              Android APK
+            </span>
+          </a>
+          <a href="#download" class="btn-dl btn-dl-ios">
+            <span class="btn-dl-icon">🍎</span>
+            <span class="btn-dl-text">
+              <small>Download for</small>
+              iOS
+            </span>
+          </a>
+        </div>
+        <div class="hero-stats">
+          <div class="stat">
+            <div class="stat-num">4</div>
+            <div class="stat-lbl">Metals tracked</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num">Live</div>
+            <div class="stat-lbl">Price feed</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num">Free</div>
+            <div class="stat-lbl">No subscription</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phone mockup -->
+      <div class="phone-wrap">
+        <div class="phone-glow"></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="app-header">
+              <span class="app-header-title">⚡ GoldTracker</span>
+              <span class="app-header-live">● LIVE</span>
+            </div>
+            <div class="app-price-cards">
+              <div class="app-price-card">
+                <span class="app-price-card-name" style="color:#F5A623">GOLD</span>
+                <div style="text-align:right">
+                  <div class="app-price-card-val">$3,312.40</div>
+                  <div class="app-price-card-chg">▲ +0.82%</div>
+                </div>
+              </div>
+              <div class="app-price-card">
+                <span class="app-price-card-name" style="color:#C0C0C0">SILVER</span>
+                <div style="text-align:right">
+                  <div class="app-price-card-val">$32.15</div>
+                  <div class="app-price-card-chg">▲ +1.24%</div>
+                </div>
+              </div>
+              <div class="app-price-card">
+                <span class="app-price-card-name" style="color:#E5E4E2">PLATINUM</span>
+                <div style="text-align:right">
+                  <div class="app-price-card-val">$975.00</div>
+                  <div class="app-price-card-chg" style="color:#E74C3C">▼ -0.31%</div>
+                </div>
+              </div>
+            </div>
+            <div class="app-chart-area">
+              <div class="app-chart-card">
+                <div class="app-chart-title">Gold  — 7 Day Chart</div>
+                <svg class="chart-svg-wrap" viewBox="0 0 210 60" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#F5A623" stop-opacity="0.2"/>
+                      <stop offset="100%" stop-color="#F5A623" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <path d="M0,45 C20,42 40,30 60,28 C80,26 100,35 120,22 C140,10 160,18 180,12 L210,8" fill="none" stroke="#F5A623" stroke-width="1.5"/>
+                  <path d="M0,45 C20,42 40,30 60,28 C80,26 100,35 120,22 C140,10 160,18 180,12 L210,8 L210,60 L0,60 Z" fill="url(#cg)"/>
+                  <circle cx="210" cy="8" r="3" fill="#F5A623"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Ticker ── -->
+<div class="ticker">
+  <div class="ticker-track" id="tickerTrack">
+    <!-- Doubled for seamless loop -->
+    <div class="ticker-item"><span class="ticker-name">GOLD (XAU/USD)</span><span class="ticker-price">$3,312.40</span><span class="ticker-change tc-up">▲ +0.82%</span></div>
+    <div class="ticker-item"><span class="ticker-name">SILVER (XAG/USD)</span><span class="ticker-price">$32.15</span><span class="ticker-change tc-up">▲ +1.24%</span></div>
+    <div class="ticker-item"><span class="ticker-name">PLATINUM (XPT/USD)</span><span class="ticker-price">$975.00</span><span class="ticker-change tc-down">▼ -0.31%</span></div>
+    <div class="ticker-item"><span class="ticker-name">PALLADIUM (XPD/USD)</span><span class="ticker-price">$1,050.00</span><span class="ticker-change tc-up">▲ +0.55%</span></div>
+    <!-- repeat -->
+    <div class="ticker-item"><span class="ticker-name">GOLD (XAU/USD)</span><span class="ticker-price">$3,312.40</span><span class="ticker-change tc-up">▲ +0.82%</span></div>
+    <div class="ticker-item"><span class="ticker-name">SILVER (XAG/USD)</span><span class="ticker-price">$32.15</span><span class="ticker-change tc-up">▲ +1.24%</span></div>
+    <div class="ticker-item"><span class="ticker-name">PLATINUM (XPT/USD)</span><span class="ticker-price">$975.00</span><span class="ticker-change tc-down">▼ -0.31%</span></div>
+    <div class="ticker-item"><span class="ticker-name">PALLADIUM (XPD/USD)</span><span class="ticker-price">$1,050.00</span><span class="ticker-change tc-up">▲ +0.55%</span></div>
+  </div>
+</div>
+
+<!-- ── Features ── -->
+<section class="section" id="features">
+  <div class="container">
+    <div class="section-label">Why GoldTracker</div>
+    <h2 class="section-title">Everything you need to<br />trade precious metals smarter</h2>
+    <p class="section-sub">Stay ahead of the market without staring at charts all day. Set it once, get alerted when it matters.</p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">📈</div>
+        <div class="feature-title">Live Price Chart</div>
+        <div class="feature-desc">7-day historical chart with live intraday updates. See trends across Gold, Silver, Platinum and Palladium instantly.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔔</div>
+        <div class="feature-title">Smart Alerts</div>
+        <div class="feature-desc">Set price-above, price-below or percentage change conditions. Alerts fire the moment your target is hit.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📱</div>
+        <div class="feature-title">Push &amp; SMS</div>
+        <div class="feature-desc">Get notified via push notification and optional SMS text message — no app required to receive SMS alerts.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🖥️</div>
+        <div class="feature-title">Web Admin Panel</div>
+        <div class="feature-desc">Manage all alerts remotely from the admin panel. Trigger notifications manually or broadcast to all devices.</div>
+      </div>
+    </div>
+
+    <!-- Admin CTA -->
+    <div class="admin-cta-card">
+      <div class="admin-cta-text">
+        <div class="label">For Power Users</div>
+        <h3>Manage alerts from your browser</h3>
+        <p>The web admin panel lets you create and manage price alerts, view registered devices, broadcast notifications, and see a full notification history — all without touching the mobile app.</p>
+      </div>
+      <a href="/admin" class="btn-admin">Open Admin Panel →</a>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ── How it works ── -->
+<section class="section" id="how">
+  <div class="container">
+    <div class="section-label">Getting Started</div>
+    <h2 class="section-title">Up and running in 3 steps</h2>
+
+    <div class="how-grid">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-title">Download the app</div>
+        <div class="step-desc">Install the GoldTracker app on your Android or iOS device. No account sign-up required.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-title">Create an alert</div>
+        <div class="step-desc">Choose a commodity, set your price target and condition type. Optionally add SMS delivery to your phone number.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-title">Get notified</div>
+        <div class="step-desc">The app monitors prices in the background. When your target is hit, you receive an instant push notification and SMS.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ── Commodities ── -->
+<section class="section" id="commodities">
+  <div class="container">
+    <div class="section-label">Tracked Commodities</div>
+    <h2 class="section-title">Precious metals covered</h2>
+
+    <div class="commodity-grid">
+      <div class="commodity-card">
+        <div class="commodity-symbol" style="color:#F5A623">XAU</div>
+        <div class="commodity-name">Gold</div>
+        <div class="commodity-unit">per troy oz</div>
+      </div>
+      <div class="commodity-card">
+        <div class="commodity-symbol" style="color:#C0C0C0">XAG</div>
+        <div class="commodity-name">Silver</div>
+        <div class="commodity-unit">per troy oz</div>
+      </div>
+      <div class="commodity-card">
+        <div class="commodity-symbol" style="color:#E5E4E2">XPT</div>
+        <div class="commodity-name">Platinum</div>
+        <div class="commodity-unit">per troy oz</div>
+      </div>
+      <div class="commodity-card">
+        <div class="commodity-symbol" style="color:#9090A0">XPD</div>
+        <div class="commodity-name">Palladium</div>
+        <div class="commodity-unit">per troy oz</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ── Download ── -->
+<section class="section download-section" id="download">
+  <div class="container">
+    <div class="section-label">Download</div>
+    <h2 class="download-title">Get GoldTracker<br />on your device</h2>
+    <p class="download-sub">Available for Android and iOS. Free, no account required.</p>
+
+    <div class="download-btns">
+      <!-- Replace # with actual download URLs once builds are ready -->
+      <a href="#" class="btn-dl btn-dl-android" id="apkBtn" onclick="handleDownload(event, 'android')">
+        <span class="btn-dl-icon">🤖</span>
+        <span class="btn-dl-text">
+          <small>Download APK</small>
+          Android
+        </span>
+      </a>
+      <a href="#" class="btn-dl btn-dl-ios" id="iosBtn" onclick="handleDownload(event, 'ios')">
+        <span class="btn-dl-icon">🍎</span>
+        <span class="btn-dl-text">
+          <small>Download for</small>
+          iOS
+        </span>
+      </a>
+    </div>
+    <p class="download-note" id="dlNote">Build links coming soon — check back shortly.</p>
+  </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand">GoldTracker</div>
+      <div class="footer-links">
+        <a href="#features" class="footer-link">Features</a>
+        <a href="#download" class="footer-link">Download</a>
+        <a href="/admin" class="footer-link">Admin</a>
+      </div>
+    </div>
+    <p class="footer-copy">© 2026 GoldTracker. Prices provided for informational purposes only.</p>
+  </div>
+</footer>
+
+<script>
+  // ── Sticky nav on scroll ──
+  window.addEventListener('scroll', () => {
+    document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 40);
+  });
+
+  // ── Download placeholder handler ──
+  // Replace APK_URL and IOS_URL constants with actual download URLs when ready
+  const APK_URL = '';   // e.g. 'https://github.com/yourrepo/releases/download/v1.0/goldtracker.apk'
+  const IOS_URL = '';   // e.g. App Store link
+
+  function handleDownload(e, platform) {
+    const url = platform === 'android' ? APK_URL : IOS_URL;
+    if (!url) {
+      e.preventDefault();
+      document.getElementById('dlNote').textContent = `${platform === 'android' ? 'Android APK' : 'iOS'} build coming soon. Check back shortly.`;
+      document.getElementById('dlNote').style.color = '#F5A623';
+    }
+  }
+</script>
+</body>
+</html>
