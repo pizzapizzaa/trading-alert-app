@@ -65,7 +65,7 @@ export default function DashboardScreen() {
         {/* Hero banner */}
         <View style={styles.heroBanner}>
           <Text style={styles.heroTitle}>Spot Prices</Text>
-          <Text style={styles.heroSub}>Live · USD per troy ounce</Text>
+          <Text style={styles.heroSub}>Live · USD spot prices</Text>
           {lastUpdated ? (
             <Text style={styles.heroTime}>Last updated: {lastUpdated}</Text>
           ) : null}

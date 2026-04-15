@@ -57,6 +57,15 @@ export const COMMODITIES: Commodity[] = [
     apiKey: 'palladium',
     yahooKey: 'PA=F',
   },
+  {
+    symbol: 'oil',
+    name: 'Crude Oil',
+    unit: 'barrel',
+    color: '#4A3224',
+    icon: '',
+    apiKey: 'oil',
+    yahooKey: 'CL=F',
+  },
 ];
 
 export const COMMODITY_MAP: Record<string, Commodity> = Object.fromEntries(
