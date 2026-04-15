@@ -1,0 +1,26 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Expo Start",
+			"type": "shell",
+			"command": "npx expo start",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Expo Start",
+			"type": "shell",
+			"command": "npx expo start --clear",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Expo Start",
+			"type": "shell",
+			"command": "npx expo start --clear",
+			"isBackground": true,
+			"problemMatcher": []
+		}
+	]
+}
