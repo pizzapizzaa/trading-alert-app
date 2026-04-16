@@ -1,12 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Colors } from '@/constants/colors';
-import { Text } from 'react-native';
-
-function TabIcon({ icon, label, focused }: { icon: string; label: string; focused: boolean }) {
-  return (
-    <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>{icon}</Text>
-  );
-}
+import { Bell, ChartBar, ClipboardText } from 'phosphor-react-native';
 
 export default function TabsLayout() {
   return (
@@ -36,9 +30,9 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: 'Dashboard',
-          headerTitle: '📊 GoldTracker',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon icon="🏅" label="Dashboard" focused={focused} />
+          headerTitle: 'GoldTracker',
+          tabBarIcon: ({ focused, color }) => (
+            <ChartBar size={24} color={color} weight={focused ? 'fill' : 'regular'} />
           ),
         }}
       />
@@ -46,9 +40,9 @@ export default function TabsLayout() {
         name="alerts"
         options={{
           title: 'Alerts',
-          headerTitle: '🔔 My Alerts',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon icon="🔔" label="Alerts" focused={focused} />
+          headerTitle: 'My Alerts',
+          tabBarIcon: ({ focused, color }) => (
+            <Bell size={24} color={color} weight={focused ? 'fill' : 'regular'} />
           ),
         }}
       />
@@ -56,9 +50,9 @@ export default function TabsLayout() {
         name="history"
         options={{
           title: 'History',
-          headerTitle: '📋 Alert History',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon icon="📋" label="History" focused={focused} />
+          headerTitle: 'Alert History',
+          tabBarIcon: ({ focused, color }) => (
+            <ClipboardText size={24} color={color} weight={focused ? 'fill' : 'regular'} />
           ),
         }}
       />

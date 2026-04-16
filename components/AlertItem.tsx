@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable, Switch } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { COMMODITY_MAP } from '@/constants/commodities';
+import { CommodityIcon } from './CommodityIcon';
 import type { Alert, AlertConditionType } from '@/store/alertsStore';
 
 interface AlertItemProps {
@@ -53,7 +54,7 @@ export function AlertItem({ alert, onPress, onToggle, onDelete }: AlertItemProps
     >
       <View style={styles.top}>
         <View style={styles.nameRow}>
-          <Text style={styles.emoji}>{commodity?.emoji ?? '📈'}</Text>
+          <CommodityIcon symbol={alert.symbol} size={26} color={commodity?.color} weight="fill" />
           <View>
             <Text style={styles.alertName}>{alert.name}</Text>
             <Text style={styles.symbol}>{commodity?.name ?? alert.symbol}</Text>
@@ -115,9 +116,7 @@ const styles = StyleSheet.create({
     gap: 10,
     flex: 1,
   },
-  emoji: {
-    fontSize: 28,
-  },
+
   alertName: {
     fontSize: 16,
     fontWeight: '700',

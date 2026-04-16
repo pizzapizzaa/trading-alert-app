@@ -9,6 +9,8 @@ import {
   ActivityIndicator,
   useWindowDimensions,
 } from 'react-native';
+import { Bell, Warning, PlusCircle } from 'phosphor-react-native';
+import { CommodityIcon } from '@/components/CommodityIcon';
 import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { COMMODITIES, type CommoditySymbol } from '@/constants/commodities';
@@ -59,9 +61,9 @@ export default function DashboardScreen() {
       >
         {/* Live price chart */}
         <View style={styles.chartCard}>
-          {/* Header: name + price */}
           <View style={styles.chartHeader}>
             <View style={styles.chartNameRow}>
+              <CommodityIcon symbol={selectedSymbol} size={20} color={selectedCommodity.color} weight="fill" />
               <Text style={styles.chartCommodityName}>
                 {selectedCommodity.name}
               </Text>
@@ -130,10 +132,13 @@ export default function DashboardScreen() {
             style={styles.alertChip}
             onPress={() => router.push('/alerts')}
           >
+          <View style={styles.alertChipContent}>
+            <Bell size={14} color={Colors.gold} weight="fill" />
             <Text style={styles.alertChipText}>
-              🔔 {activeAlerts.length} active alert
+              {activeAlerts.length} active alert
               {activeAlerts.length !== 1 ? 's' : ''} — tap to manage
             </Text>
+          </View>
           </Pressable>
         )}
 
@@ -148,7 +153,7 @@ export default function DashboardScreen() {
         {/* Error state */}
         {isError && !isLoading && (
           <View style={styles.errorBox}>
-            <Text style={styles.errorIcon}>⚠️</Text>
+            <Warning size={30} color={Colors.red} />
             <Text style={styles.errorText}>
               Unable to fetch prices. Pull down to retry.
             </Text>
@@ -180,7 +185,10 @@ export default function DashboardScreen() {
             )
           }
         >
-          <Text style={styles.testBtnText}>🔔 Send Test Notification</Text>
+          <View style={styles.testBtnContent}>
+            <Bell size={15} color={Colors.textSecondary} />
+            <Text style={styles.testBtnText}>Send Test Notification</Text>
+          </View>
         </Pressable>
 
         {/* CTA if no alerts */}
@@ -189,7 +197,7 @@ export default function DashboardScreen() {
             style={styles.ctaCard}
             onPress={() => router.push('/add-alert')}
           >
-            <Text style={styles.ctaIcon}>➕</Text>
+            <PlusCircle size={36} color={Colors.gold} weight="fill" />
             <Text style={styles.ctaTitle}>Set your first alert</Text>
             <Text style={styles.ctaSub}>
               Get notified when gold prices move past your threshold
@@ -220,6 +228,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.goldDark,
   },
+  alertChipContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   alertChipText: {
     color: Colors.gold,
     fontSize: 13,
@@ -244,9 +257,6 @@ const styles = StyleSheet.create({
     borderColor: Colors.red + '44',
     marginBottom: 16,
   },
-  errorIcon: {
-    fontSize: 30,
-  },
   errorText: {
     color: Colors.red,
     fontSize: 14,
@@ -260,10 +270,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.goldDark + '55',
     marginTop: 8,
-  },
-  ctaIcon: {
-    fontSize: 36,
-    marginBottom: 8,
   },
   ctaTitle: {
     fontSize: 17,
@@ -345,6 +351,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 1,
     borderColor: Colors.borderLight,
+  },
+  testBtnContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   testBtnText: {
     color: Colors.textSecondary,

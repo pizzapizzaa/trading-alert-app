@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/colors';
+import { CheckCircle } from 'phosphor-react-native';
 import { COMMODITIES, type CommoditySymbol } from '@/constants/commodities';
 import { useAlertsStore, type AlertConditionType } from '@/store/alertsStore';
 
@@ -206,7 +207,10 @@ export default function EditAlertScreen() {
           style={({ pressed }) => [styles.submitBtn, pressed && styles.submitBtnPressed]}
           onPress={handleSave}
         >
-          <Text style={styles.submitText}>Save Changes ✓</Text>
+          <View style={styles.submitContent}>
+            <CheckCircle size={18} color={Colors.black} weight="fill" />
+            <Text style={styles.submitText}>Save Changes</Text>
+          </View>
         </Pressable>
 
         <View style={{ height: 40 }} />
@@ -302,6 +306,11 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   submitBtnPressed: { opacity: 0.85 },
+  submitContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   submitText: { fontSize: 17, fontWeight: '800', color: Colors.black },
   smsToggleRow: {
     flexDirection: 'row',

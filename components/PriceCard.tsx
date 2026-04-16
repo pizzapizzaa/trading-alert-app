@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { COMMODITY_MAP } from '@/constants/commodities';
+import { CommodityIcon } from './CommodityIcon';
 import {
   formatPrice,
   formatChange,
@@ -28,7 +29,7 @@ export function PriceCard({ data, onPress }: PriceCardProps) {
       {/* Header row */}
       <View style={styles.header}>
         <View style={styles.nameRow}>
-          <Text style={styles.emoji}>{commodity?.emoji ?? '📈'}</Text>
+          <CommodityIcon symbol={data.symbol} size={32} color={commodity?.color} weight="fill" />
           <View>
             <Text style={styles.commodity}>{data.name}</Text>
             <Text style={styles.symbol}>{data.symbol}</Text>
@@ -80,9 +81,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-  },
-  emoji: {
-    fontSize: 32,
   },
   commodity: {
     fontSize: 17,

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { COMMODITY_MAP } from '@/constants/commodities';
+import { CommodityIcon } from './CommodityIcon';
 import type { HistoryEntry } from '@/store/alertsStore';
 
 interface HistoryItemProps {
@@ -27,7 +28,7 @@ export function HistoryItem({ entry }: HistoryItemProps) {
     <View style={styles.card}>
       <View style={styles.top}>
         <View style={styles.left}>
-          <Text style={styles.emoji}>{commodity?.emoji ?? '📈'}</Text>
+          <CommodityIcon symbol={entry.symbol} size={26} color={commodity?.color} weight="fill" />
           <View>
             <Text style={styles.alertName}>{entry.alertName}</Text>
             <Text style={styles.timestamp}>
@@ -70,9 +71,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     flex: 1,
-  },
-  emoji: {
-    fontSize: 26,
   },
   alertName: {
     fontSize: 15,

@@ -7,6 +7,7 @@ import {
   Pressable,
   Alert,
 } from 'react-native';
+import { Bell, Plus } from 'phosphor-react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { useAlertsStore } from '@/store/alertsStore';
@@ -38,13 +39,13 @@ export default function AlertsScreen() {
         style={styles.fab}
         onPress={() => router.push('/add-alert')}
       >
-        <Text style={styles.fabIcon}>＋</Text>
+        <Plus size={20} color={Colors.black} weight="bold" />
         <Text style={styles.fabLabel}>New Alert</Text>
       </Pressable>
 
       {alerts.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyIcon}>🔔</Text>
+          <Bell size={56} color={Colors.textMuted} />
           <Text style={styles.emptyTitle}>No alerts yet</Text>
           <Text style={styles.emptySub}>
             Tap "New Alert" to get notified when prices move.
@@ -110,11 +111,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-  fabIcon: {
-    color: Colors.black,
-    fontSize: 20,
-    fontWeight: '700',
-  },
   fabLabel: {
     color: Colors.black,
     fontSize: 15,
@@ -126,9 +122,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 10,
     padding: 40,
-  },
-  emptyIcon: {
-    fontSize: 56,
   },
   emptyTitle: {
     fontSize: 20,

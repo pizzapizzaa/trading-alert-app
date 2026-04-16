@@ -54,7 +54,7 @@
   .nav-item { display: flex; align-items: center; gap: 10px; padding: 11px 18px; cursor: pointer; color: var(--text-sec); font-size: 14px; font-weight: 500; border-left: 3px solid transparent; transition: all 0.15s; }
   .nav-item:hover { background: var(--elevated); color: var(--text); }
   .nav-item.active { color: var(--gold); border-left-color: var(--gold); background: var(--gold-dim); }
-  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+  .nav-icon { font-size: 18px; width: 20px; text-align: center; display: flex; align-items: center; justify-content: center; }
   .nav-badge { margin-left: auto; background: var(--gold); color: #000; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px; min-width: 18px; text-align: center; }
   .nav-home { display: flex; align-items: center; gap: 8px; padding: 14px 18px; color: var(--text-muted); font-size: 13px; border-bottom: 1px solid var(--border); text-decoration: none; }
   .nav-home:hover { color: var(--gold); }
@@ -146,7 +146,7 @@
 
   /* ── Empty state ── */
   .empty { text-align: center; padding: 48px 20px; color: var(--text-muted); }
-  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-icon { font-size: 36px; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; }
 
   /* ── Section header ── */
   .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
@@ -175,13 +175,14 @@
     .prices-bar { padding: 10px 16px; gap: 18px; }
   }
 </style>
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/index.css">
 </head>
 <body>
 
 <!-- ── Server setup modal (shown on first visit or when no URL configured) ── -->
 <div class="modal-overlay open" id="setupModal">
   <div class="modal setup-modal">
-    <div class="modal-title">⚙️ Connect to Admin Server</div>
+    <div class="modal-title"><i class="ph ph-gear" style="margin-right:6px;vertical-align:-2px"></i>Connect to Admin Server</div>
     <div class="modal-sub">Enter the URL of your running GoldTracker admin server. This is saved in your browser and never sent anywhere.</div>
 
     <div class="setup-warning">
@@ -253,7 +254,7 @@
 
 <!-- ── Top bar ── -->
 <div class="topbar">
-  <div class="topbar-brand">📊 GoldTracker <span>Admin</span></div>
+  <div class="topbar-brand"><i class="ph-fill ph-chart-line" style="margin-right:6px;font-size:20px;vertical-align:-3px"></i>GoldTracker <span>Admin</span></div>
   <div class="topbar-right">
     <div class="server-url-display">
       <span>Server:</span>
@@ -275,11 +276,11 @@
   <div class="sidebar">
     <a href="/" class="nav-home">← Back to Site</a>
     <div class="nav" id="nav">
-      <div class="nav-item active" data-page="dashboard"><span class="nav-icon">🏠</span>Dashboard</div>
-      <div class="nav-item" data-page="alerts"><span class="nav-icon">🔔</span>Alerts<span class="nav-badge" id="alertsBadge">0</span></div>
-      <div class="nav-item" data-page="devices"><span class="nav-icon">📱</span>Devices<span class="nav-badge" id="devicesBadge">0</span></div>
-      <div class="nav-item" data-page="broadcast"><span class="nav-icon">📢</span>Broadcast</div>
-      <div class="nav-item" data-page="history"><span class="nav-icon">📋</span>History</div>
+      <div class="nav-item active" data-page="dashboard"><span class="nav-icon"><i class="ph ph-house"></i></span>Dashboard</div>
+      <div class="nav-item" data-page="alerts"><span class="nav-icon"><i class="ph ph-bell"></i></span>Alerts<span class="nav-badge" id="alertsBadge">0</span></div>
+      <div class="nav-item" data-page="devices"><span class="nav-icon"><i class="ph ph-device-mobile"></i></span>Devices<span class="nav-badge" id="devicesBadge">0</span></div>
+      <div class="nav-item" data-page="broadcast"><span class="nav-icon"><i class="ph ph-megaphone"></i></span>Broadcast</div>
+      <div class="nav-item" data-page="history"><span class="nav-icon"><i class="ph ph-clipboard-text"></i></span>History</div>
     </div>
   </div>
 
@@ -291,7 +292,7 @@
         <div class="page-title">Dashboard</div>
         <div class="page-sub">Overview of your GoldTracker admin</div>
         <div class="offline-banner" id="offlineBanner">
-          ⚠️ Cannot reach admin server. Check your server URL or ensure the server is running.
+          <i class="ph-fill ph-warning" style="margin-right:6px;vertical-align:-2px"></i>Cannot reach admin server. Check your server URL or ensure the server is running.
           <button class="btn btn-ghost btn-sm" style="margin-left:12px" onclick="openSetup()">Change URL</button>
         </div>
         <div class="stats-grid">
@@ -302,7 +303,7 @@
         </div>
         <div class="card">
           <div class="card-title">Recent Notifications</div>
-          <div id="dashHistory"><div class="empty"><div class="empty-icon">📭</div>No notifications yet</div></div>
+          <div id="dashHistory"><div class="empty"><div class="empty-icon"><i class="ph ph-envelope-simple-open"></i></div>No notifications yet</div></div>
         </div>
       </div>
 
@@ -316,7 +317,7 @@
           <div class="table-wrap">
             <table>
               <thead><tr><th>Name</th><th>Commodity</th><th>Condition</th><th>Target</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
-              <tbody id="alertsTable"><tr><td colspan="7"><div class="empty"><div class="empty-icon">🔔</div>No alerts yet</div></td></tr></tbody>
+              <tbody id="alertsTable"><tr><td colspan="7"><div class="empty"><div class="empty-icon"><i class="ph ph-bell"></i></div>No alerts yet</div></td></tr></tbody>
             </table>
           </div>
         </div>
@@ -338,7 +339,7 @@
           <div class="table-wrap">
             <table>
               <thead><tr><th>Label</th><th>Platform</th><th>Token</th><th>Last Seen</th><th>Actions</th></tr></thead>
-              <tbody id="devicesTable"><tr><td colspan="5"><div class="empty"><div class="empty-icon">📱</div>No devices registered yet</div></td></tr></tbody>
+              <tbody id="devicesTable"><tr><td colspan="5"><div class="empty"><div class="empty-icon"><i class="ph ph-device-mobile"></i></div>No devices registered yet</div></td></tr></tbody>
             </table>
           </div>
         </div>
@@ -369,7 +370,7 @@
             <div id="deviceChecklist" class="device-checklist" style="display:none"></div>
           </div>
           <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="sendBroadcast()">
-            📢 Send Notification
+            <i class="ph ph-megaphone"></i> Send Notification
           </button>
         </div>
       </div>
@@ -384,7 +385,7 @@
           <div class="table-wrap">
             <table>
               <thead><tr><th>Alert</th><th>Commodity</th><th>Message</th><th>Sent To</th><th>Source</th><th>Time</th></tr></thead>
-              <tbody id="historyTable"><tr><td colspan="6"><div class="empty"><div class="empty-icon">📭</div>No history yet</div></td></tr></tbody>
+              <tbody id="historyTable"><tr><td colspan="6"><div class="empty"><div class="empty-icon"><i class="ph ph-envelope-simple-open"></i></div>No history yet</div></td></tr></tbody>
             </table>
           </div>
         </div>
@@ -526,7 +527,7 @@ function updateBadges() {
 function renderAlerts() {
   const tbody = document.getElementById('alertsTable');
   if (!alerts.length) {
-    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="empty-icon">🔔</div>No alerts yet</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="empty-icon"><i class="ph ph-bell"></i></div>No alerts yet</div></td></tr>`;
     return;
   }
   tbody.innerHTML = alerts.map(a => `
@@ -551,7 +552,7 @@ function renderAlerts() {
 function renderDevices() {
   const tbody = document.getElementById('devicesTable');
   if (!devices.length) {
-    tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">📱</div>No devices. Open the mobile app to register.</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon"><i class="ph ph-device-mobile"></i></div>No devices. Open the mobile app to register.</div></td></tr>`;
     return;
   }
   tbody.innerHTML = devices.map(d => `
@@ -562,7 +563,7 @@ function renderDevices() {
       <td class="hist-time">${fmtDate(d.lastSeen)}</td>
       <td>
         <div style="display:flex;gap:6px">
-          <button class="btn btn-trigger btn-sm" onclick="sendTestToDevice('${d.id}')">📤 Test</button>
+          <button class="btn btn-trigger btn-sm" onclick="sendTestToDevice('${d.id}')"><i class="ph ph-paper-plane-tilt"></i> Test</button>
           <button class="btn btn-danger btn-sm" onclick="deleteDevice('${d.id}')">Remove</button>
         </div>
       </td>
@@ -582,7 +583,7 @@ function renderHistory() {
       <td><span class="badge ${srcClass(h.source)}">${h.source??'—'}</span></td>
       <td class="hist-time">${fmtDate(h.triggeredAt)}</td>
     </tr>`).join('')
-    : `<tr><td colspan="6"><div class="empty"><div class="empty-icon">📭</div>No history yet</div></td></tr>`;
+    : `<tr><td colspan="6"><div class="empty"><div class="empty-icon"><i class="ph ph-envelope-simple-open"></i></div>No history yet</div></td></tr>`;
 }
 
 function renderDashHistory() {
@@ -596,7 +597,7 @@ function renderDashHistory() {
           <td class="hist-time">${fmtDate(h.triggeredAt)}</td>
         </tr>`).join('')}
        </tbody></table>`
-    : `<div class="empty"><div class="empty-icon">📭</div>No notifications yet</div>`;
+    : `<div class="empty"><div class="empty-icon"><i class="ph ph-envelope-simple-open"></i></div>No notifications yet</div>`;
 }
 
 // ─── Alert modal ──────────────────────────────────────────────────────────────

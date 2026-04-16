@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/colors';
+import { Bell } from 'phosphor-react-native';
 import { COMMODITIES, type CommoditySymbol } from '@/constants/commodities';
 import { useAlertsStore, type AlertConditionType } from '@/store/alertsStore';
 
@@ -219,7 +220,10 @@ export default function AddAlertScreen() {
           style={({ pressed }) => [styles.submitBtn, pressed && styles.submitBtnPressed]}
           onPress={handleSubmit}
         >
-          <Text style={styles.submitText}>Create Alert 🔔</Text>
+          <View style={styles.submitContent}>
+            <Bell size={18} color={Colors.black} weight="fill" />
+            <Text style={styles.submitText}>Create Alert</Text>
+          </View>
         </Pressable>
 
         <View style={{ height: 40 }} />
@@ -365,6 +369,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 6,
+  },
+  submitContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   submitBtnPressed: {
     opacity: 0.85,
