@@ -50,13 +50,13 @@
     position: fixed; top: 0; left: 0; right: 0; z-index: 100;
     padding: 16px 0;
     border-bottom: 1px solid transparent;
-    transition: all 0.3s;
-    backdrop-filter: blur(0px);
+    transition: background 0.3s, border-color 0.3s, backdrop-filter 0.3s;
   }
   nav.scrolled {
     background: rgba(10,10,10,0.92);
     border-bottom-color: var(--border);
     backdrop-filter: blur(20px);
+    will-change: backdrop-filter;
   }
   .nav-inner {
     display: flex; align-items: center; justify-content: space-between;
@@ -405,7 +405,9 @@
     .section { padding: 72px 0; }
   }
 </style>
-<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/index.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
 </head>
 <body>
 
@@ -672,7 +674,7 @@
   // ── Sticky nav on scroll ──
   window.addEventListener('scroll', () => {
     document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 40);
-  });
+  }, { passive: true });
 
   // ── Download placeholder handler ──
   // Replace APK_URL with the actual APK download URL when the build is ready
