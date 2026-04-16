@@ -163,7 +163,54 @@
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  #auth-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    background: #0D0D0D;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #auth-overlay.hidden { display: none; }
+  .auth-box {
+    background: #1A1A1A; border: 1px solid #2E2E2E; border-radius: 16px;
+    padding: 40px 36px; width: 100%; max-width: 400px; text-align: center;
+  }
+  .auth-box h2 { font-size: 22px; font-weight: 900; color: #fff; margin: 16px 0 8px; letter-spacing: -0.5px; }
+  .auth-box p { font-size: 14px; color: #AAAAAA; margin-bottom: 24px; line-height: 1.6; }
+  .auth-box input {
+    width: 100%; padding: 13px 16px; border-radius: 10px;
+    border: 1px solid #2E2E2E; background: #0D0D0D;
+    color: #fff; font-size: 15px; margin-bottom: 12px; box-sizing: border-box;
+  }
+  .auth-box input:focus { outline: none; border-color: #F5A623; }
+  .auth-box button {
+    width: 100%; padding: 13px; border-radius: 10px;
+    background: #F5A623; color: #000; font-size: 15px; font-weight: 800;
+    border: none; cursor: pointer; transition: opacity 0.15s;
+  }
+  .auth-box button:disabled { opacity: 0.6; cursor: default; }
+  .auth-err { color: #E74C3C; font-size: 13px; margin-top: 8px; }
+  .auth-sent { color: #F5A623; font-size: 14px; margin-top: 12px; line-height: 1.6; }
+  .auth-box .auth-signout {
+    margin-top: 0; background: transparent; color: #666;
+    font-size: 13px; font-weight: 500; padding: 8px;
+  }
+  .auth-box .auth-signout:hover { color: #AAAAAA; }
+</style>
 <body>
+
+<!-- ── Auth overlay ── -->
+<div id="auth-overlay">
+  <div class="auth-box">
+    <i class="ph-fill ph-lock-key" style="font-size:40px;color:#F5A623"></i>
+    <h2>Admin Sign In</h2>
+    <p id="auth-desc">Enter your email to receive a magic link.</p>
+    <input type="email" id="auth-email" placeholder="you@example.com" autocomplete="email" />
+    <button id="auth-btn" onclick="sendMagicLink()">Send Magic Link</button>
+    <div class="auth-err" id="auth-err"></div>
+    <div class="auth-sent" id="auth-sent" style="display:none"></div>
+  </div>
+</div>
 
 <!-- Top bar -->
 <div class="topbar">
@@ -404,6 +451,62 @@
 <div class="toast-container" id="toasts"></div>
 
 <script>
+// ─── Supabase auth ────────────────────────────────────────────────────────────
+// Fill in your Supabase project credentials (see constants/supabaseConfig.ts)
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const ADMIN_REDIRECT = window.location.origin + window.location.pathname;
+
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+async function initAuth() {
+  // Exchange code/token from magic link redirect
+  const hash = window.location.hash;
+  const search = window.location.search;
+  if (hash.includes('access_token') || search.includes('code=')) {
+    await _supabase.auth.exchangeCodeForSession(window.location.href);
+    history.replaceState(null, '', window.location.pathname);
+  }
+  const { data: { session } } = await _supabase.auth.getSession();
+  if (session) {
+    document.getElementById('auth-overlay').classList.add('hidden');
+  }
+  _supabase.auth.onAuthStateChange((_event, session) => {
+    if (session) document.getElementById('auth-overlay').classList.add('hidden');
+    else document.getElementById('auth-overlay').classList.remove('hidden');
+  });
+}
+
+async function sendMagicLink() {
+  const email = document.getElementById('auth-email').value.trim().toLowerCase();
+  if (!email || !email.includes('@')) {
+    document.getElementById('auth-err').textContent = 'Please enter a valid email.';
+    return;
+  }
+  document.getElementById('auth-btn').disabled = true;
+  document.getElementById('auth-err').textContent = '';
+  const { error } = await _supabase.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: ADMIN_REDIRECT },
+  });
+  document.getElementById('auth-btn').disabled = false;
+  if (error) {
+    document.getElementById('auth-err').textContent = error.message;
+  } else {
+    document.getElementById('auth-sent').style.display = 'block';
+    document.getElementById('auth-sent').textContent =
+      `Magic link sent to ${email}. Check your inbox and click the link to sign in.`;
+    document.getElementById('auth-email').style.display = 'none';
+    document.getElementById('auth-btn').style.display = 'none';
+  }
+}
+
+async function adminSignOut() {
+  await _supabase.auth.signOut();
+}
+
+initAuth();
+
 // ─── State ────────────────────────────────────────────────────────────────────
 let alerts = [], devices = [], history = [], prices = [];
 let editingAlertId = null;
