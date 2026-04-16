@@ -448,13 +448,6 @@
               Android APK
             </span>
           </a>
-          <a href="#download" class="btn-dl btn-dl-ios">
-            <span class="btn-dl-icon">🍎</span>
-            <span class="btn-dl-text">
-              <small>Download for</small>
-              iOS
-            </span>
-          </a>
         </div>
         <div class="hero-stats">
           <div class="stat">
@@ -587,7 +580,7 @@
       <div class="step">
         <div class="step-num">1</div>
         <div class="step-title">Download the app</div>
-        <div class="step-desc">Install the GoldTracker app on your Android or iOS device. No account sign-up required.</div>
+        <div class="step-desc">Install the GoldTracker app on your Android device. No account sign-up required.</div>
       </div>
       <div class="step">
         <div class="step-num">2</div>
@@ -643,7 +636,7 @@
   <div class="container">
     <div class="section-label">Download</div>
     <h2 class="download-title">Get GoldTracker<br />on your device</h2>
-    <p class="download-sub">Available for Android and iOS. Free, no account required.</p>
+    <p class="download-sub">Available for Android. Free, no account required.</p>
 
     <div class="download-btns">
       <!-- Replace # with actual download URLs once builds are ready -->
@@ -652,13 +645,6 @@
         <span class="btn-dl-text">
           <small>Download APK</small>
           Android
-        </span>
-      </a>
-      <a href="#" class="btn-dl btn-dl-ios" id="iosBtn" onclick="handleDownload(event, 'ios')">
-        <span class="btn-dl-icon">🍎</span>
-        <span class="btn-dl-text">
-          <small>Download for</small>
-          iOS
         </span>
       </a>
     </div>
@@ -688,15 +674,14 @@
   });
 
   // ── Download placeholder handler ──
-  // Replace APK_URL and IOS_URL constants with actual download URLs when ready
+  // Replace APK_URL with the actual APK download URL when the build is ready
   const APK_URL = '';   // e.g. 'https://github.com/yourrepo/releases/download/v1.0/goldtracker.apk'
-  const IOS_URL = '';   // e.g. App Store link
 
   function handleDownload(e, platform) {
-    const url = platform === 'android' ? APK_URL : IOS_URL;
+    const url = APK_URL;
     if (!url) {
       e.preventDefault();
-      document.getElementById('dlNote').textContent = `${platform === 'android' ? 'Android APK' : 'iOS'} build coming soon. Check back shortly.`;
+      document.getElementById('dlNote').textContent = 'Android APK build coming soon. Check back shortly.';
       document.getElementById('dlNote').style.color = '#F5A623';
     }
   }

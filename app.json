@@ -17,7 +17,10 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.goldtracker.app",
       "infoPlist": {
-        "UIBackgroundModes": ["fetch", "remote-notification"]
+        "UIBackgroundModes": [
+          "fetch",
+          "remote-notification"
+        ]
       }
     },
     "android": {
@@ -51,6 +54,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "659f9892-f324-4833-877b-0b8c43d75022"
+      }
     }
   }
 }
