@@ -50,7 +50,8 @@
           "defaultChannel": "price-alerts",
           "sounds": []
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

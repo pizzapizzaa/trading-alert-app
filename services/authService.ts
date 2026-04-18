@@ -1,7 +1,14 @@
 import { supabase } from './supabaseClient';
 import type { Session, User } from '@supabase/supabase-js';
+import * as Linking from 'expo-linking';
+import Constants from 'expo-constants';
 
-const REDIRECT_URL = 'goldtracker://auth/callback';
+// In Expo Go, deep links use the Expo proxy (exp+goldtracker:// or exp://).
+// In a standalone/dev build, use the custom scheme directly.
+const isExpoGo = Constants.appOwnership === 'expo';
+const REDIRECT_URL = isExpoGo
+  ? Linking.createURL('/auth/callback')
+  : 'goldtracker://auth/callback';
 
 /**
  * Send a magic link to the given email address.

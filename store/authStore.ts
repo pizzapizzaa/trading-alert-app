@@ -7,15 +7,19 @@ interface AuthState {
   session: Session | null;
   /** True once the initial session check has completed */
   initialized: boolean;
+  /** True after the admin has passed the in-app password gate (resets on app restart) */
+  adminVerified: boolean;
 
   initialize: () => Promise<void>;
   setSession: (session: Session | null) => void;
+  setAdminVerified: (verified: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   session: null,
   initialized: false,
+  adminVerified: false,
 
   initialize: async () => {
     const { data } = await supabase.auth.getSession();
@@ -26,5 +30,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
   },
 
-  setSession: (session) => set({ session, user: session?.user ?? null }),
+  setSession: (session) =>
+    set({ session, user: session?.user ?? null, adminVerified: false }),
+
+  setAdminVerified: (verified) => set({ adminVerified: verified }),
 }));

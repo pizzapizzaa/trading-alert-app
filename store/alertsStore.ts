@@ -30,6 +30,8 @@ export interface Alert {
   smsEnabled: boolean;
   /** Phone number to send SMS to (E.164 preferred, e.g. "+14155552671") */
   smsPhone: string;
+  /** Whether to send an email to the authenticated user's address when this alert triggers */
+  emailEnabled: boolean;
 }
 
 export interface HistoryEntry {

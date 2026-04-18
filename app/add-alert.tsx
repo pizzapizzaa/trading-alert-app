@@ -13,9 +13,10 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/colors';
-import { Bell } from 'phosphor-react-native';
+import { Bell, Lock } from 'phosphor-react-native';
 import { COMMODITIES, type CommoditySymbol } from '@/constants/commodities';
 import { useAlertsStore, type AlertConditionType } from '@/store/alertsStore';
+import { useAuthStore } from '@/store/authStore';
 
 const CONDITIONS: { label: string; value: AlertConditionType; description: string; prefix: string }[] = [
   { label: 'Price rises above', value: 'price_above', description: 'Alert when spot price exceeds target', prefix: '$' },
@@ -30,6 +31,8 @@ export default function AddAlertScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ symbol?: string }>();
   const addAlert = useAlertsStore((s) => s.addAlert);
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = !!user;
 
   const defaultSymbol = (params.symbol as CommoditySymbol) ?? 'XAU';
 
@@ -39,6 +42,7 @@ export default function AddAlertScreen() {
   const [targetValue, setTargetValue] = useState('');
   const [smsEnabled, setSmsEnabled] = useState(false);
   const [smsPhone, setSmsPhone] = useState('');
+  const [emailEnabled, setEmailEnabled] = useState(false);
 
   const selectedCondition = CONDITIONS.find((c) => c.value === conditionType)!;
   const isPercentCondition = conditionType.includes('percent');
@@ -68,6 +72,7 @@ export default function AddAlertScreen() {
       active: true,
       smsEnabled,
       smsPhone: smsPhone.trim(),
+      emailEnabled: isAuthenticated && emailEnabled,
     });
 
     router.back();
@@ -189,29 +194,66 @@ export default function AddAlertScreen() {
         {/* SMS Alert */}
         <View style={styles.section}>
           <Text style={styles.label}>SMS Alert</Text>
-          <View style={styles.smsToggleRow}>
-            <View style={styles.smsToggleLeft}>
-              <Text style={styles.smsToggleTitle}>Send SMS when triggered</Text>
-              <Text style={styles.smsToggleSub}>Free via TextBelt · 1 SMS/day</Text>
+          {isAuthenticated ? (
+            <>
+              <View style={styles.smsToggleRow}>
+                <View style={styles.smsToggleLeft}>
+                  <Text style={styles.smsToggleTitle}>Send SMS when triggered</Text>
+                  <Text style={styles.smsToggleSub}>Free via TextBelt · 1 SMS/day</Text>
+                </View>
+                <Switch
+                  value={smsEnabled}
+                  onValueChange={setSmsEnabled}
+                  trackColor={{ false: Colors.border, true: Colors.gold + '99' }}
+                  thumbColor={smsEnabled ? Colors.gold : Colors.textMuted}
+                />
+              </View>
+              {smsEnabled && (
+                <TextInput
+                  style={[styles.input, { marginTop: 12 }]}
+                  placeholder="Phone number (e.g. +14155552671)"
+                  placeholderTextColor={Colors.textMuted}
+                  value={smsPhone}
+                  onChangeText={setSmsPhone}
+                  keyboardType="phone-pad"
+                  returnKeyType="done"
+                  autoComplete="tel"
+                />
+              )}
+            </>
+          ) : (
+            <View style={styles.lockedRow}>
+              <Lock size={16} color={Colors.textMuted} weight="fill" />
+              <Text style={styles.lockedText}>
+                Sign in to unlock SMS &amp; email alerts
+              </Text>
             </View>
-            <Switch
-              value={smsEnabled}
-              onValueChange={setSmsEnabled}
-              trackColor={{ false: Colors.border, true: Colors.gold + '99' }}
-              thumbColor={smsEnabled ? Colors.gold : Colors.textMuted}
-            />
-          </View>
-          {smsEnabled && (
-            <TextInput
-              style={[styles.input, { marginTop: 12 }]}
-              placeholder="Phone number (e.g. +14155552671)"
-              placeholderTextColor={Colors.textMuted}
-              value={smsPhone}
-              onChangeText={setSmsPhone}
-              keyboardType="phone-pad"
-              returnKeyType="done"
-              autoComplete="tel"
-            />
+          )}
+        </View>
+
+        {/* Email Alert */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Email Alert</Text>
+          {isAuthenticated ? (
+            <View style={styles.smsToggleRow}>
+              <View style={styles.smsToggleLeft}>
+                <Text style={styles.smsToggleTitle}>Send email when triggered</Text>
+                <Text style={styles.smsToggleSub}>Sent to your account email</Text>
+              </View>
+              <Switch
+                value={emailEnabled}
+                onValueChange={setEmailEnabled}
+                trackColor={{ false: Colors.border, true: Colors.gold + '99' }}
+                thumbColor={emailEnabled ? Colors.gold : Colors.textMuted}
+              />
+            </View>
+          ) : (
+            <View style={styles.lockedRow}>
+              <Lock size={16} color={Colors.textMuted} weight="fill" />
+              <Text style={styles.lockedText}>
+                Sign in to unlock SMS &amp; email alerts
+              </Text>
+            </View>
           )}
         </View>
 
@@ -407,5 +449,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.textMuted,
     marginTop: 2,
+  },
+  lockedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  lockedText: {
+    fontSize: 14,
+    color: Colors.textMuted,
+    flex: 1,
   },
 });

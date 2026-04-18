@@ -5,5 +5,5 @@
 //   3. Copy "Project URL" → SUPABASE_URL
 //   4. Copy "anon / public" key → SUPABASE_ANON_KEY
 // ──────────────────────────────────────────────────────────────────────────────
-export const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-export const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+export const SUPABASE_URL = 'https://cnbatsgptuyxfmlfidpc.supabase.co';
+export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuYmF0c2dwdHV5eGZtbGZpZHBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0OTY3MTksImV4cCI6MjA5MjA3MjcxOX0.pEtra2VKFC_b8CWVRmy8hsmhH2_Z6RtTLYGtW2rsxj4';

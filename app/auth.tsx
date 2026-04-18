@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,17 +9,34 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
-import { Bell, EnvelopeSimple, CheckCircle } from 'phosphor-react-native';
+import { Bell, EnvelopeSimple, CheckCircle, XCircle, ArrowLeft } from 'phosphor-react-native';
+import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { signInWithMagicLink } from '@/services/authService';
+import { supabase } from '@/services/supabaseClient';
 
-type Step = 'email' | 'sent';
+type Step = 'email' | 'sent' | 'success' | 'error';
 
 export default function AuthScreen() {
   const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [linkError, setLinkError] = useState('');
+  const router = useRouter();
+
+  // Listen for successful sign-in after magic link tap
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        setStep('success');
+      } else if (event === 'TOKEN_REFRESHED' && !session) {
+        setLinkError('This link has expired or already been used.');
+        setStep('error');
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   async function handleSend() {
     const trimmed = email.trim().toLowerCase();
@@ -38,6 +55,37 @@ export default function AuthScreen() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (step === 'success') {
+    return (
+      <View style={styles.container}>
+        <CheckCircle size={64} color={Colors.gold} weight="fill" />
+        <Text style={styles.title}>You're signed in!</Text>
+        <Text style={styles.sub}>Welcome to GoldTracker. Your alerts and history are now synced to your account.</Text>
+        <TouchableOpacity style={styles.sendBtn} onPress={() => router.replace('/(tabs)' as any)} activeOpacity={0.8}>
+          <View style={styles.btnContent}>
+            <Text style={styles.sendBtnText}>Go to App</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (step === 'error') {
+    return (
+      <View style={styles.container}>
+        <XCircle size={64} color="#ef4444" weight="fill" />
+        <Text style={styles.title}>Link expired</Text>
+        <Text style={styles.sub}>{linkError || 'This magic link is no longer valid.'}</Text>
+        <TouchableOpacity style={styles.sendBtn} onPress={() => { setStep('email'); setError(''); }} activeOpacity={0.8}>
+          <View style={styles.btnContent}>
+            <ArrowLeft size={18} color={Colors.black} weight="bold" />
+            <Text style={styles.sendBtnText}>Try again</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+    );
   }
 
   if (step === 'sent') {

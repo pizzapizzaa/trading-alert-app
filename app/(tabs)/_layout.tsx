@@ -1,6 +1,38 @@
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
+import { TouchableOpacity, Alert } from 'react-native';
 import { Colors } from '@/constants/colors';
-import { Bell, ChartBar, ClipboardText } from 'phosphor-react-native';
+import { Bell, ChartBar, ClipboardText, SignOut, UserCircle } from 'phosphor-react-native';
+import { signOut } from '@/services/authService';
+import { useAuthStore } from '@/store/authStore';
+
+function AuthButton() {
+  const user = useAuthStore((s) => s.user);
+  const router = useRouter();
+
+  if (!user) {
+    return (
+      <TouchableOpacity onPress={() => router.push('/auth' as any)} style={{ paddingRight: 16 }}>
+        <UserCircle size={24} color={Colors.gold} weight="regular" />
+      </TouchableOpacity>
+    );
+  }
+
+  function handleSignOut() {
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign Out',
+        style: 'destructive',
+        onPress: () => signOut().catch(() => {}),
+      },
+    ]);
+  }
+  return (
+    <TouchableOpacity onPress={handleSignOut} style={{ paddingRight: 16 }}>
+      <SignOut size={22} color={Colors.textMuted} weight="bold" />
+    </TouchableOpacity>
+  );
+}
 
 export default function TabsLayout() {
   return (
@@ -31,6 +63,7 @@ export default function TabsLayout() {
         options={{
           title: 'Dashboard',
           headerTitle: 'GoldTracker',
+          headerRight: () => <AuthButton />,
           tabBarIcon: ({ focused, color }) => (
             <ChartBar size={24} color={color} weight={focused ? 'fill' : 'regular'} />
           ),

@@ -9,6 +9,7 @@ import { useAlertsStore } from '@/store/alertsStore';
 import { registerDeviceWithAdmin } from '@/services/adminService';
 import { supabase } from '@/services/supabaseClient';
 import { useAuthStore } from '@/store/authStore';
+import { ADMIN_EMAIL } from '@/constants/adminSecrets';
 import { Colors } from '@/constants/colors';
 
 const queryClient = new QueryClient();
@@ -17,12 +18,16 @@ configureNotificationBehaviour();
 
 export default function RootLayout() {
   const loadFromStorage = useAlertsStore((s) => s.loadFromStorage);
-  const { initialized, user, initialize, setSession } = useAuthStore();
+  const { initialized, user, adminVerified, initialize, setSession } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
-    if (initialized && !user) router.replace('/auth' as any);
-  }, [initialized, user, router]);
+    if (!initialized) return;
+    // Only redirect admin to the password gate — regular users (including anon) go straight to the app
+    if (user && user.email === ADMIN_EMAIL && !adminVerified) {
+      router.replace('/admin-gate' as any);
+    }
+  }, [initialized, user, adminVerified, router]);
 
   useEffect(() => {
     // 1. Resolve initial session from secure storage
@@ -74,6 +79,16 @@ export default function RootLayout() {
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="auth" options={{ headerShown: false }} />
+        <Stack.Screen name="admin-gate" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="admin"
+          options={{
+            title: 'Admin',
+            headerStyle: { backgroundColor: Colors.background },
+            headerTintColor: Colors.gold,
+            headerTitleStyle: { color: Colors.textPrimary, fontWeight: '800' },
+          }}
+        />
         <Stack.Screen
           name="add-alert"
           options={{

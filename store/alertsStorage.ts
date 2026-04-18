@@ -18,8 +18,9 @@ function rowToAlert(row: Record<string, unknown>): Alert {
     active: row.active as boolean,
     createdAt: row.created_at as string,
     lastTriggeredAt: (row.last_triggered_at as string | null) ?? null,
-    smsEnabled: row.sms_enabled as boolean,
+    smsEnabled: (row.sms_enabled as boolean) ?? false,
     smsPhone: (row.sms_phone as string) ?? '',
+    emailEnabled: (row.email_enabled as boolean) ?? false,
   };
 }
 
@@ -36,6 +37,7 @@ function alertToRow(alert: Alert, userId: string): Record<string, unknown> {
     last_triggered_at: alert.lastTriggeredAt,
     sms_enabled: alert.smsEnabled,
     sms_phone: alert.smsPhone,
+    email_enabled: alert.emailEnabled,
   };
 }
 

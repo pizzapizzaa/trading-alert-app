@@ -2,7 +2,9 @@ import { useEffect, useRef } from 'react';
 import { useAlertsStore, type Alert } from '@/store/alertsStore';
 import { scheduleLocalNotification } from '@/services/notificationService';
 import { sendSmsAlert } from '@/services/smsService';
+import { sendEmailAlert } from '@/services/emailService';
 import { saveTriggeredAlert } from '@/store/alertsStorage';
+import { useAuthStore } from '@/store/authStore';
 import type { PriceData } from '@/services/priceService';
 
 /**
@@ -12,6 +14,7 @@ import type { PriceData } from '@/services/priceService';
 export function useAlertEvaluator(prices: PriceData[] | undefined) {
   const alerts = useAlertsStore((s) => s.alerts);
   const refreshHistory = useAlertsStore((s) => s.refreshHistory);
+  const user = useAuthStore((s) => s.user);
   // Track which alerts we already fired in this session to avoid spam
   const firedRef = useRef<Set<string>>(new Set());
 
@@ -83,9 +86,21 @@ export function useAlertEvaluator(prices: PriceData[] | undefined) {
             price,
           });
 
-          if (alert.smsEnabled && alert.smsPhone) {
+          if (alert.smsEnabled && alert.smsPhone && user) {
             sendSmsAlert(alert.smsPhone, `[GoldTracker] ${message}`).catch((err) =>
               console.warn('[useAlertEvaluator] SMS send failed:', err)
+            );
+          }
+
+          if (alert.emailEnabled && user?.email) {
+            sendEmailAlert({
+              to: user.email,
+              alertName: alert.name,
+              message,
+              price,
+              symbol: alert.symbol,
+            }).catch((err) =>
+              console.warn('[useAlertEvaluator] Email send failed:', err)
             );
           }
 
