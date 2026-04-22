@@ -1,10 +1,7 @@
-// ─── Admin credentials ────────────────────────────────────────────────────────
-// Values are injected at build time via EAS environment variables:
-//   EXPO_PUBLIC_ADMIN_EMAIL
-//   EXPO_PUBLIC_ADMIN_PASSWORD
-// Set these in your EAS project dashboard or via:
+// ─── Admin email ──────────────────────────────────────────────────────────────
+// Used to identify the admin user by email address (routing only — access is
+// controlled by Supabase authentication, not by a client-side password).
+// Set via EAS environment variable:
 //   eas secret:create --scope project --name EXPO_PUBLIC_ADMIN_EMAIL --value "..."
-//   eas secret:create --scope project --name EXPO_PUBLIC_ADMIN_PASSWORD --value "..."
 // ──────────────────────────────────────────────────────────────────────────────
 export const ADMIN_EMAIL = process.env.EXPO_PUBLIC_ADMIN_EMAIL ?? '';
-export const ADMIN_PASSWORD = process.env.EXPO_PUBLIC_ADMIN_PASSWORD ?? '';

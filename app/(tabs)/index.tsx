@@ -17,6 +17,7 @@ import { COMMODITIES, type CommoditySymbol } from '@/constants/commodities';
 import { usePrices } from '@/hooks/usePrices';
 import { usePriceHistory } from '@/hooks/usePriceHistory';
 import { useAlertEvaluator } from '@/hooks/useAlertEvaluator';
+import type { ChartRange } from '@/services/priceService';
 import { PriceCard } from '@/components/PriceCard';
 import { PriceChart } from '@/components/PriceChart';
 import { useAlertsStore } from '@/store/alertsStore';
@@ -33,13 +34,14 @@ export default function DashboardScreen() {
   useAlertEvaluator(prices);
 
   const [selectedSymbol, setSelectedSymbol] = useState<CommoditySymbol>('XAU');
-  const priceHistory = usePriceHistory(prices);
+  const [selectedRange, setSelectedRange] = useState<ChartRange>('1W');
+  const priceHistory = usePriceHistory(prices, selectedRange);
 
   const selectedCommodity = COMMODITIES.find((c) => c.symbol === selectedSymbol) ?? COMMODITIES[0];
   const selectedPriceData = prices?.find((p) => p.symbol === selectedSymbol) ?? null;
   const chartData = priceHistory[selectedSymbol] ?? [];
   // 16px scroll padding × 2 + 16px card padding × 2
-  const chartWidth = windowWidth - 64;
+  const chartVisibleWidth = windowWidth - 64;
 
   const isUp = (selectedPriceData?.changePercent ?? 0) >= 0;
   const changeColor = isUp ? Colors.green : Colors.red;
@@ -88,11 +90,42 @@ export default function DashboardScreen() {
             </View>
           </View>
 
+          {/* Range selector */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.rangeContainer}
+          >
+            {(['1H', '1D', '1W', '1M', '3M', '6M', '1Y', '3Y'] as ChartRange[]).map((r) => (
+              <Pressable
+                key={r}
+                style={[
+                  styles.rangePill,
+                  selectedRange === r && {
+                    backgroundColor: selectedCommodity.color + '33',
+                    borderColor: selectedCommodity.color,
+                  },
+                ]}
+                onPress={() => setSelectedRange(r)}
+              >
+                <Text
+                  style={[
+                    styles.rangePillText,
+                    selectedRange === r && { color: selectedCommodity.color },
+                  ]}
+                >
+                  {r}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+
           {/* Chart */}
           <PriceChart
             data={chartData}
             color={selectedCommodity.color}
-            width={chartWidth}
+            visibleWidth={chartVisibleWidth}
+            range={selectedRange}
           />
 
           {/* Commodity selector pills */}
@@ -341,6 +374,24 @@ const styles = StyleSheet.create({
   pillText: {
     fontSize: 12,
     fontWeight: '600',
+    color: Colors.textSecondary,
+  },
+  rangeContainer: {
+    gap: 6,
+    paddingBottom: 10,
+    paddingTop: 2,
+  },
+  rangePill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+    backgroundColor: Colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  rangePillText: {
+    fontSize: 11,
+    fontWeight: '700',
     color: Colors.textSecondary,
   },
   testBtn: {

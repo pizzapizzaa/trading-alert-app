@@ -245,6 +245,10 @@
       <label>Admin Server URL</label>
       <input id="setupUrl" type="url" placeholder="https://xxxx.ngrok.io  or  http://localhost:3001" />
     </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label>API Secret (ADMIN_API_SECRET)</label>
+      <input id="setupSecret" type="password" placeholder="Leave blank if ADMIN_API_SECRET is not set on the server" autocomplete="current-password" />
+    </div>
 
     <div class="modal-footer">
       <a href="/" class="btn btn-ghost" style="text-decoration:none">← Back to Site</a>
@@ -449,8 +453,8 @@
 
 <script>// ─── Supabase auth ────────────────────────────────────────────────────────────
 // Fill in your Supabase project credentials (see constants/supabaseConfig.ts)
-const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const SUPABASE_URL = 'https://cnbatsgptuyxfmlfidpc.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuYmF0c2dwdHV5eGZtbGZpZHBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0OTY3MTksImV4cCI6MjA5MjA3MjcxOX0.pEtra2VKFC_b8CWVRmy8hsmhH2_Z6RtTLYGtW2rsxj4';
 const ADMIN_REDIRECT = window.location.origin + window.location.pathname;
 
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -508,13 +512,18 @@ async function adminSignOut() {
 initAuth();
 // ─── Server URL (stored in localStorage) ─────────────────────────────────────
 const URL_KEY = 'gt_admin_server_url';
+const SECRET_KEY = 'gt_admin_api_secret';
 let BASE = localStorage.getItem(URL_KEY) || '';
+let API_SECRET_HEADER = localStorage.getItem(SECRET_KEY) || '';
 
 function saveServerUrl() {
   const val = document.getElementById('setupUrl').value.trim().replace(/\/$/, '');
   if (!val) { toast('Please enter a server URL', 'error'); return; }
+  const secret = document.getElementById('setupSecret').value;
   BASE = val;
+  API_SECRET_HEADER = secret;
   localStorage.setItem(URL_KEY, BASE);
+  localStorage.setItem(SECRET_KEY, API_SECRET_HEADER);
   document.getElementById('setupModal').classList.remove('open');
   document.getElementById('serverUrlVal').textContent = BASE;
   document.getElementById('mobileConfigHint').textContent = `export const ADMIN_SERVER_URL = '${BASE}';`;
@@ -523,6 +532,7 @@ function saveServerUrl() {
 
 function openSetup() {
   document.getElementById('setupUrl').value = BASE;
+  document.getElementById('setupSecret').value = API_SECRET_HEADER;
   document.getElementById('setupModal').classList.add('open');
 }
 
@@ -568,8 +578,10 @@ function toast(msg, type = 'success') {
 // ─── API helpers ──────────────────────────────────────────────────────────────
 async function api(path, opts = {}) {
   if (!BASE) throw new Error('No server URL configured');
+  const headers = { 'Content-Type': 'application/json' };
+  if (API_SECRET_HEADER) headers['Authorization'] = `Bearer ${API_SECRET_HEADER}`;
   const res = await fetch(BASE + path, {
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     ...opts,
     body: opts.body ? JSON.stringify(opts.body) : undefined,
   });
@@ -610,9 +622,9 @@ function renderPricesBar(data) {
   document.getElementById('pricesBar').innerHTML = data.map(p => {
     const up = p.changePercent >= 0;
     return `<div class="price-item">
-      <span class="price-name" style="color:${COMMODITY_COLORS[p.symbol]}">${p.name}</span>
-      <span class="price-val">$${p.price ? p.price.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : 'N/A'}</span>
-      <span class="price-chg ${up?'up':'down'}">${up?'▲':'▼'} ${Math.abs(p.changePercent).toFixed(2)}%</span>
+      <span class="price-name" style="color:${COMMODITY_COLORS[p.symbol] ?? '#888'}">${esc(String(p.name ?? ''))}</span>
+      <span class="price-val">$${p.price ? Number(p.price).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : 'N/A'}</span>
+      <span class="price-chg ${up?'up':'down'}">${up?'▲':'▼'} ${Math.abs(Number(p.changePercent)).toFixed(2)}%</span>
     </div>`;
   }).join('');
 }

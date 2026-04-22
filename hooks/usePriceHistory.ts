@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { CommoditySymbol } from '@/constants/commodities';
 import { COMMODITIES } from '@/constants/commodities';
-import type { PriceData } from '@/services/priceService';
-import { fetchPriceHistory } from '@/services/priceService';
+import type { PriceData, ChartRange } from '@/services/priceService';
+import { fetchPriceHistoryForRange } from '@/services/priceService';
 
 export interface PricePoint {
   price: number;
@@ -12,11 +12,25 @@ export interface PricePoint {
 
 export type PriceHistory = Partial<Record<CommoditySymbol, PricePoint[]>>;
 
-/** Fetches 7-day daily close prices for all commodities from stooq.com */
-async function fetchAllHistory(): Promise<PriceHistory> {
+/** Ranges where live intraday appending makes sense */
+const LIVE_RANGES: ChartRange[] = ['1H', '1D'];
+
+/** Stale times per range — shorter ranges refresh more often */
+const STALE_MS: Record<ChartRange, number> = {
+  '1H':  5  * 60 * 1_000,
+  '1D':  15 * 60 * 1_000,
+  '1W':  60 * 60 * 1_000,
+  '1M':  60 * 60 * 1_000,
+  '3M':  4  * 60 * 60 * 1_000,
+  '6M':  4  * 60 * 60 * 1_000,
+  '1Y':  24 * 60 * 60 * 1_000,
+  '3Y':  24 * 60 * 60 * 1_000,
+};
+
+async function fetchAllHistory(range: ChartRange): Promise<PriceHistory> {
   const results = await Promise.allSettled(
     COMMODITIES.map((c) =>
-      fetchPriceHistory(c.yahooKey, 10).then((points) => ({
+      fetchPriceHistoryForRange(c.yahooKey, range).then((points) => ({
         symbol: c.symbol,
         points,
       }))
@@ -33,22 +47,30 @@ async function fetchAllHistory(): Promise<PriceHistory> {
 }
 
 /**
- * Returns price history per commodity:
- * - Base: real 7-day daily close prices fetched from stooq.com on mount
- * - Live: intraday points appended every time `prices` updates (every ~30s)
+ * Returns price history per commodity for the given ChartRange.
+ * For '1H' and '1D' ranges, live intraday points from `prices` are appended.
  */
-export function usePriceHistory(prices: PriceData[] | undefined): PriceHistory {
+export function usePriceHistory(
+  prices: PriceData[] | undefined,
+  range: ChartRange = '1W'
+): PriceHistory {
   const { data: baseHistory = {} } = useQuery<PriceHistory>({
-    queryKey: ['priceHistory7d'],
-    queryFn: fetchAllHistory,
-    staleTime: 60 * 60 * 1_000, // re-fetch at most once per hour
+    queryKey: ['priceHistory', range],
+    queryFn: () => fetchAllHistory(range),
+    staleTime: STALE_MS[range],
     retry: 2,
   });
 
   const [livePoints, setLivePoints] = useState<PriceHistory>({});
 
+  // Reset live points whenever range changes
+  useEffect(() => {
+    setLivePoints({});
+  }, [range]);
+
   useEffect(() => {
     if (!prices?.length) return;
+    if (!LIVE_RANGES.includes(range)) return;
 
     setLivePoints((prev) => {
       const next = { ...prev };
@@ -59,16 +81,16 @@ export function usePriceHistory(prices: PriceData[] | undefined): PriceHistory {
         const existing = next[p.symbol] ?? [];
         const last = existing[existing.length - 1];
         if (!last || last.price !== p.price) {
-          next[p.symbol] = [...existing, { price: p.price, time: Date.now() }].slice(-50);
+          next[p.symbol] = [...existing, { price: p.price, time: Date.now() }].slice(-200);
           changed = true;
         }
       }
 
       return changed ? next : prev;
     });
-  }, [prices]);
+  }, [prices, range]);
 
-  // Merge: historical base (daily) + live intraday points
+  // Merge: historical base + live intraday points
   const merged: PriceHistory = {};
   const allSymbols = new Set([
     ...Object.keys(baseHistory),
@@ -78,7 +100,7 @@ export function usePriceHistory(prices: PriceData[] | undefined): PriceHistory {
   for (const symbol of allSymbols) {
     const base = baseHistory[symbol] ?? [];
     const live = livePoints[symbol] ?? [];
-    merged[symbol] = [...base, ...live];
+    merged[symbol] = LIVE_RANGES.includes(range) ? [...base, ...live] : base;
   }
 
   return merged;

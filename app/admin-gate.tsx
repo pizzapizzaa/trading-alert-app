@@ -1,66 +1,43 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { LockKey } from 'phosphor-react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/colors';
-import { ADMIN_PASSWORD } from '@/constants/adminSecrets';
 import { useAuthStore } from '@/store/authStore';
 
 export default function AdminGateScreen() {
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const user = useAuthStore((s) => s.user);
   const setAdminVerified = useAuthStore((s) => s.setAdminVerified);
   const router = useRouter();
 
-  function handleVerify() {
-    if (password === ADMIN_PASSWORD) {
+  useEffect(() => {
+    // If the user has a valid Supabase session they are authenticated —
+    // that is sufficient to grant admin access. No client-side password check.
+    if (user) {
       setAdminVerified(true);
       router.replace('/admin' as any);
-    } else {
-      setError('Incorrect password. Try again.');
-      setPassword('');
     }
-  }
+  }, [user, setAdminVerified, router]);
 
+  // Shown only when there is no active session (edge case: arrived here directly)
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <View style={styles.container}>
       <LockKey size={52} color={Colors.gold} weight="fill" />
       <Text style={styles.title}>Admin Access</Text>
-      <Text style={styles.sub}>Enter your admin password to continue.</Text>
-
-      <TextInput
-        style={[styles.input, error ? styles.inputError : undefined]}
-        placeholder="Admin password"
-        placeholderTextColor={Colors.textMuted}
-        secureTextEntry
-        autoCapitalize="none"
-        autoCorrect={false}
-        value={password}
-        onChangeText={(t) => { setPassword(t); setError(''); }}
-        onSubmitEditing={handleVerify}
-        returnKeyType="done"
-      />
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
+      <Text style={styles.sub}>You must be signed in to access the admin area.</Text>
       <TouchableOpacity
         style={styles.btn}
-        onPress={handleVerify}
+        onPress={() => router.replace('/auth' as any)}
         activeOpacity={0.8}
       >
-        <Text style={styles.btnText}>Unlock</Text>
+        <Text style={styles.btnText}>Sign In</Text>
       </TouchableOpacity>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -84,26 +61,6 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     textAlign: 'center',
     marginBottom: 32,
-  },
-  input: {
-    width: '100%',
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: Colors.textPrimary,
-    marginBottom: 8,
-  },
-  inputError: {
-    borderColor: Colors.red,
-  },
-  errorText: {
-    color: Colors.red,
-    fontSize: 13,
-    marginBottom: 12,
-    alignSelf: 'flex-start',
   },
   btn: {
     width: '100%',

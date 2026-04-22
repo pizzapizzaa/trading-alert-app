@@ -2,10 +2,56 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const { randomUUID } = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 const DB_PATH = path.join(__dirname, 'db.json');
+
+// ─── Security config ─────────────────────────────────────────────────────────
+
+// Set ADMIN_API_SECRET in your environment to protect all API endpoints.
+// Without it the server will warn on every request (intended for local dev only).
+const API_SECRET = process.env.ADMIN_API_SECRET ?? '';
+const CORS_ORIGIN = process.env.CORS_ORIGIN ?? 'http://localhost:3001';
+
+// Allowlists for input validation
+const VALID_SYMBOLS = new Set(['XAU', 'XAG', 'XPT', 'XPD', 'oil']);
+const VALID_CONDITIONS = new Set([
+  'price_above', 'price_below',
+  'change_percent_up', 'change_percent_down',
+  'change_dollar_up', 'change_dollar_down',
+]);
+
+// ─── Simple in-memory rate limiter ───────────────────────────────────────────
+
+const _rateCounts = new Map();
+function rateLimiter(maxPerMinute) {
+  return (req, res, next) => {
+    const key = (req.ip ?? 'unknown') + ':' + Math.floor(Date.now() / 60_000);
+    const count = (_rateCounts.get(key) ?? 0) + 1;
+    _rateCounts.set(key, count);
+    if (count === 1) setTimeout(() => _rateCounts.delete(key), 61_000);
+    if (count > maxPerMinute) {
+      return res.status(429).json({ error: 'Too many requests' });
+    }
+    next();
+  };
+}
+
+// ─── Auth middleware ──────────────────────────────────────────────────────────
+
+function requireApiSecret(req, res, next) {
+  if (!API_SECRET) {
+    console.warn('[Auth] ADMIN_API_SECRET not set — all API requests allowed. Set it in production!');
+    return next();
+  }
+  const auth = req.headers['authorization'] ?? '';
+  if (auth !== `Bearer ${API_SECRET}`) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next();
+}
 
 // ─── DB helpers ──────────────────────────────────────────────────────────────
 
@@ -28,9 +74,18 @@ function saveDb(db) {
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 
-app.use(cors());
-app.use(express.json());
+app.use(cors({ origin: CORS_ORIGIN }));
+app.use(express.json({ limit: '10kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Apply auth + rate limiting to all /api routes except device registration
+// (device registration is called from the mobile app which cannot hold a server secret)
+app.use('/api', (req, res, next) => {
+  if (req.method === 'POST' && req.path === '/devices/register') return next();
+  requireApiSecret(req, res, next);
+});
+app.use('/api', rateLimiter(120));
+app.use('/api/notify', rateLimiter(10));
 
 // ─── Commodities ─────────────────────────────────────────────────────────────
 
@@ -207,7 +262,7 @@ async function evaluateAlerts() {
       });
 
       db.history.unshift({
-        id: `hist_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        id: randomUUID(),
         alertId: alert.id,
         alertName: alert.name,
         symbol: alert.symbol,
@@ -260,7 +315,7 @@ app.post('/api/devices/register', (req, res) => {
     db.devices[idx] = { ...db.devices[idx], platform, label, lastSeen: now };
   } else {
     db.devices.push({
-      id: `dev_${Date.now()}`,
+      id: randomUUID(),
       token,
       platform: platform ?? 'unknown',
       label: label ?? `${platform ?? 'Device'}`,
@@ -290,16 +345,26 @@ app.get('/api/alerts', (req, res) => {
 
 app.post('/api/alerts', (req, res) => {
   const { name, symbol, conditionType, targetValue } = req.body;
-  if (!name || !symbol || !conditionType || targetValue == null) {
-    return res.status(400).json({ error: 'name, symbol, conditionType, targetValue are required' });
+  if (!name || typeof name !== 'string' || !name.trim()) {
+    return res.status(400).json({ error: 'name is required' });
+  }
+  if (!VALID_SYMBOLS.has(symbol)) {
+    return res.status(400).json({ error: `symbol must be one of: ${[...VALID_SYMBOLS].join(', ')}` });
+  }
+  if (!VALID_CONDITIONS.has(conditionType)) {
+    return res.status(400).json({ error: `conditionType must be one of: ${[...VALID_CONDITIONS].join(', ')}` });
+  }
+  const parsed = parseFloat(targetValue);
+  if (isNaN(parsed) || parsed <= 0) {
+    return res.status(400).json({ error: 'targetValue must be a positive number' });
   }
   const db = loadDb();
   const alert = {
-    id: `alert_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-    name: name.trim(),
+    id: randomUUID(),
+    name: name.trim().slice(0, 80),
     symbol,
     conditionType,
-    targetValue: parseFloat(targetValue),
+    targetValue: parsed,
     active: true,
     createdAt: new Date().toISOString(),
   };
@@ -312,8 +377,29 @@ app.put('/api/alerts/:id', (req, res) => {
   const db = loadDb();
   const idx = db.alerts.findIndex((a) => a.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Alert not found' });
-  // Prevent id/createdAt from being overwritten
-  const { id: _id, createdAt: _ca, ...patch } = req.body;
+
+  // Only allow specific fields to be updated (prevents mass-assignment)
+  const patch = {};
+  const { name, symbol, conditionType, targetValue, active } = req.body;
+  if (name !== undefined) {
+    if (typeof name !== 'string' || !name.trim()) return res.status(400).json({ error: 'Invalid name' });
+    patch.name = name.trim().slice(0, 80);
+  }
+  if (symbol !== undefined) {
+    if (!VALID_SYMBOLS.has(symbol)) return res.status(400).json({ error: 'Invalid symbol' });
+    patch.symbol = symbol;
+  }
+  if (conditionType !== undefined) {
+    if (!VALID_CONDITIONS.has(conditionType)) return res.status(400).json({ error: 'Invalid conditionType' });
+    patch.conditionType = conditionType;
+  }
+  if (targetValue !== undefined) {
+    const v = parseFloat(targetValue);
+    if (isNaN(v) || v <= 0) return res.status(400).json({ error: 'Invalid targetValue' });
+    patch.targetValue = v;
+  }
+  if (active !== undefined) patch.active = Boolean(active);
+
   db.alerts[idx] = { ...db.alerts[idx], ...patch };
   saveDb(db);
   res.json(db.alerts[idx]);
@@ -346,7 +432,7 @@ app.post('/api/alerts/:id/trigger', async (req, res) => {
   });
 
   db.history.unshift({
-    id: `hist_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    id: randomUUID(),
     alertId: alert.id,
     alertName: alert.name,
     symbol: alert.symbol,
@@ -380,7 +466,7 @@ app.post('/api/notify', async (req, res) => {
   const result = await sendExpoNotifications(tokens, title.trim(), body.trim(), data ?? {});
 
   db.history.unshift({
-    id: `hist_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    id: randomUUID(),
     alertId: null,
     alertName: title.trim(),
     symbol: null,

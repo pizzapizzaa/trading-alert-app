@@ -105,6 +105,75 @@ export interface HistoricalPoint {
   time: number; // Unix ms
 }
 
+export type ChartRange = '1H' | '1D' | '1W' | '1M' | '3M' | '6M' | '1Y' | '3Y';
+
+interface RangeConfig {
+  interval: string;
+  /** Yahoo Finance range param (e.g. "1d", "3mo"). */
+  range?: string;
+  /** If set, use period1/period2 computed from now - offsetSec. */
+  offsetSec?: number;
+}
+
+const RANGE_CONFIG: Record<ChartRange, RangeConfig> = {
+  '1H':  { interval: '1m',  offsetSec: 3_600 },
+  '1D':  { interval: '5m',  range: '1d' },
+  '1W':  { interval: '1h',  range: '5d' },
+  '1M':  { interval: '1d',  range: '1mo' },
+  '3M':  { interval: '1d',  range: '3mo' },
+  '6M':  { interval: '1wk', range: '6mo' },
+  '1Y':  { interval: '1wk', range: '1y' },
+  '3Y':  { interval: '1mo', offsetSec: 3 * 365 * 24 * 3_600 },
+};
+
+/**
+ * Fetch historical price points for a given ChartRange.
+ * Pulls from Yahoo Finance v8 chart API — no API key required.
+ */
+export async function fetchPriceHistoryForRange(
+  yahooKey: string,
+  chartRange: ChartRange
+): Promise<HistoricalPoint[]> {
+  const encoded = encodeURIComponent(yahooKey);
+  const cfg = RANGE_CONFIG[chartRange];
+
+  let url: string;
+  if (cfg.offsetSec !== undefined) {
+    const period2 = Math.floor(Date.now() / 1_000);
+    const period1 = period2 - cfg.offsetSec;
+    url = `${YAHOO_CHART_BASE}/${encoded}?period1=${period1}&period2=${period2}&interval=${cfg.interval}`;
+  } else {
+    url = `${YAHOO_CHART_BASE}/${encoded}?range=${cfg.range}&interval=${cfg.interval}`;
+  }
+
+  const response = await fetch(url, {
+    headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'application/json' },
+  });
+  if (!response.ok) throw new Error(`Yahoo Finance HTTP ${response.status}`);
+
+  const json = await response.json();
+  const result = json?.chart?.result?.[0];
+  if (!result) throw new Error('No result from Yahoo Finance');
+
+  const timestamps: number[] = result.timestamp ?? [];
+  const closes: (number | null)[] = result.indicators?.quote?.[0]?.close ?? [];
+
+  const points = timestamps
+    .map((ts, i) => {
+      const price = closes[i];
+      if (price == null || isNaN(price)) return null;
+      return { price, time: ts * 1_000 } as HistoricalPoint;
+    })
+    .filter((p): p is HistoricalPoint => p !== null);
+
+  // For 1H, trim to the last 60 minutes of data
+  if (chartRange === '1H') {
+    const cutoff = Date.now() - 3_600_000;
+    return points.filter((p) => p.time >= cutoff);
+  }
+  return points;
+}
+
 /**
  * Fetches 7-day daily close prices from Yahoo Finance (no API key required).
  * Uses the v8 chart API with 1d interval and 10d range to cover weekends.

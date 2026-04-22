@@ -1,12 +1,25 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
 const FROM_ADDRESS = Deno.env.get('FROM_ADDRESS') ?? 'alerts@goldtracker.app';
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+/** Escape HTML special characters to prevent XSS in the email body. */
+function escHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -22,16 +35,43 @@ serve(async (req) => {
       );
     }
 
-    const { to, alertName, message, price, symbol } = await req.json();
-
-    if (!to || !message) {
+    // Verify the caller's Supabase JWT and use their verified email as the
+    // recipient — never trust a `to` field supplied by the client.
+    const authHeader = req.headers.get('authorization') ?? '';
+    if (!authHeader.startsWith('Bearer ')) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields: to, message' }),
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+    if (userError || !user?.email) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    const to = user.email;
+
+    const { alertName, message, price, symbol } = await req.json();
+
+    if (!message) {
+      return new Response(
+        JSON.stringify({ error: 'Missing required field: message' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const subject = `📊 GoldTracker Alert: ${alertName ?? 'Price Alert'}`;
+    // Sanitise all user-controlled values before inserting into HTML
+    const safeAlertName = escHtml(String(alertName ?? 'Price Alert'));
+    const safeMessage = escHtml(String(message));
+    const safeSymbol = escHtml(String(symbol ?? ''));
+    const safePrice = price != null ? escHtml(Number(price).toFixed(2)) : null;
+
+    const subject = `\uD83D\uDCCA GoldTracker Alert: ${safeAlertName}`;
 
     const html = `
 <!DOCTYPE html>
@@ -59,16 +99,16 @@ serve(async (req) => {
           <tr>
             <td style="padding:24px 32px 16px;">
               <span style="display:inline-block;background:#F5A62322;border:1px solid #F5A623;border-radius:8px;padding:4px 12px;font-size:13px;font-weight:800;color:#F5A623;letter-spacing:1px;">
-                ${symbol ?? ''}
+                ${safeSymbol}
               </span>
-              ${price != null ? `<p style="margin:12px 0 0;font-size:32px;font-weight:900;color:#FFFFFF;">$${Number(price).toFixed(2)}</p>` : ''}
+              ${safePrice != null ? `<p style="margin:12px 0 0;font-size:32px;font-weight:900;color:#FFFFFF;">$${safePrice}</p>` : ''}
             </td>
           </tr>
 
           <!-- Message -->
           <tr>
             <td style="padding:0 32px 28px;">
-              <p style="margin:0;font-size:16px;color:#B0B0B0;line-height:1.6;">${message}</p>
+              <p style="margin:0;font-size:16px;color:#B0B0B0;line-height:1.6;">${safeMessage}</p>
             </td>
           </tr>
 
