@@ -295,7 +295,7 @@
   /* ── Commodities ── */
   .commodity-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 16px;
     margin-top: 52px;
   }
@@ -393,14 +393,12 @@
     .hero-stats { justify-content: center; }
     .phone-wrap { display: none; }
     .features-grid { grid-template-columns: 1fr 1fr; }
-    .commodity-grid { grid-template-columns: 1fr 1fr; }
     .how-grid { grid-template-columns: 1fr; }
     .admin-cta-card { flex-direction: column; text-align: center; }
     .admin-cta-text p { max-width: none; }
   }
   @media (max-width: 600px) {
     .features-grid { grid-template-columns: 1fr; }
-    .commodity-grid { grid-template-columns: 1fr 1fr; }
     .nav-links .nav-link { display: none; }
     .section { padding: 72px 0; }
   }
