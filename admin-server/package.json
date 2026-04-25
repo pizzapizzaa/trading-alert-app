@@ -1,7 +1,7 @@
 {
   "name": "goldtracker-admin-server",
   "version": "1.0.0",
-  "description": "GoldTracker admin panel server",
+  "description": "GoldTracker web dashboard server",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

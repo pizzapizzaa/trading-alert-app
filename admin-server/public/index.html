@@ -214,7 +214,7 @@
 
 <!-- Top bar -->
 <div class="topbar">
-  <div class="topbar-brand"><i class="ph-fill ph-chart-line" style="margin-right:6px;font-size:20px;vertical-align:-3px"></i>GoldTracker <span>Admin Panel</span></div>
+  <div class="topbar-brand"><i class="ph-fill ph-chart-line" style="margin-right:6px;font-size:20px;vertical-align:-3px"></i>GoldTracker <span>Web Dashboard</span></div>
   <div>
     <span class="status-dot" id="statusDot"></span>
     <span class="status-text" id="statusText">Connecting…</span>
@@ -376,7 +376,7 @@
         <div class="section-header">
           <div>
             <div class="page-title">Notification History</div>
-            <div class="page-sub">All notifications sent by the admin panel</div>
+            <div class="page-sub">All notifications sent by the web dashboard</div>
           </div>
           <button class="btn btn-danger btn-sm" onclick="clearHistory()">Clear All</button>
         </div>
@@ -781,7 +781,7 @@ async function sendTestToDevice(id) {
       method: 'POST',
       body: {
         title: '🔔 GoldTracker Test',
-        body: 'This is a test notification from the admin panel',
+        body: 'This is a test notification from the web dashboard',
         deviceIds: [id],
       },
     });

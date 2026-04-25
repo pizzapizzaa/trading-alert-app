@@ -792,7 +792,7 @@ async function sendTestToDevice(id) {
   try {
     const res = await api('/api/notify', { method: 'POST', body: {
       title: '🔔 GoldTracker Test',
-      body: 'Test notification from the admin panel',
+      body: 'Test notification from the web dashboard',
       deviceIds: [id],
     }});
     if (res.sent > 0) toast(`Test sent to ${d?.label ?? 'device'}`);
