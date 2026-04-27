@@ -455,30 +455,68 @@
 // Fill in your Supabase project credentials (see constants/supabaseConfig.ts)
 const SUPABASE_URL = 'https://cnbatsgptuyxfmlfidpc.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuYmF0c2dwdHV5eGZtbGZpZHBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0OTY3MTksImV4cCI6MjA5MjA3MjcxOX0.pEtra2VKFC_b8CWVRmy8hsmhH2_Z6RtTLYGtW2rsxj4';
-const ADMIN_REDIRECT = window.location.origin + window.location.pathname;
+// Always redirect back to /admin — do not use window.location.pathname (can vary)
+const ADMIN_REDIRECT = window.location.origin + '/admin';
 
-const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Use implicit flow: magic links are opened from email so there is no PKCE
+// code verifier in storage; implicit flow avoids that cross-device failure.
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: { flowType: 'implicit', detectSessionInUrl: true, persistSession: true },
+});
+
+let _dashboardLoaded = false;
+function _onSession(session) {
+  if (!session) return;
+  document.getElementById('auth-overlay').classList.add('hidden');
+  if (!_dashboardLoaded && typeof BASE !== 'undefined' && BASE) {
+    _dashboardLoaded = true;
+    loadAll();
+  }
+}
+
+// Register the listener synchronously (before any await) so the SIGNED_IN event
+// fired by the SDK when it auto-processes the magic-link hash is never missed.
+// IMPORTANT: only show the overlay on an explicit SIGNED_OUT — not on every null
+// event (INITIAL_SESSION null fires while the SDK is still initialising and would
+// flash the overlay back over a session that is about to be confirmed).
+_supabase.auth.onAuthStateChange((event, session) => {
+  if (session) {
+    _onSession(session);
+  } else if (event === 'SIGNED_OUT') {
+    _dashboardLoaded = false;
+    document.getElementById('auth-overlay').classList.remove('hidden');
+  }
+});
 
 async function initAuth() {
-  const hash = window.location.hash;
-  const search = window.location.search;
-  if (hash.includes('access_token') || search.includes('code=')) {
-    await _supabase.auth.exchangeCodeForSession(window.location.href);
+  const params = new URLSearchParams(window.location.search);
+
+  // Show any error Supabase passes back in the redirect URL
+  const urlError = params.get('error');
+  if (urlError) {
+    const desc = (params.get('error_description') || urlError).replace(/\+/g, ' ');
+    document.getElementById('auth-err').textContent = decodeURIComponent(desc);
+    history.replaceState(null, '', window.location.pathname);
+    document.getElementById('auth-overlay').classList.remove('hidden');
+    return;
+  }
+
+  // Clean hash from URL — the SDK already processed it during createClient init
+  if (window.location.hash && window.location.hash !== '#') {
     history.replaceState(null, '', window.location.pathname);
   }
+
+  // getSession() reads the in-memory state the SDK built while processing the
+  // hash/storage.  By the time this resolves, the SIGNED_IN event has either
+  // already fired (caught by the listener above) or the session is available here.
   const { data: { session } } = await _supabase.auth.getSession();
   if (session) {
-    document.getElementById('auth-overlay').classList.add('hidden');
-    if (BASE) loadAll();
+    _onSession(session);
+    if (window.location.hash) history.replaceState(null, '', window.location.pathname);
+  } else {
+    // Confirmed: no session — show the sign-in form
+    document.getElementById('auth-overlay').classList.remove('hidden');
   }
-  _supabase.auth.onAuthStateChange((_event, session) => {
-    if (session) {
-      document.getElementById('auth-overlay').classList.add('hidden');
-      if (BASE) loadAll();
-    } else {
-      document.getElementById('auth-overlay').classList.remove('hidden');
-    }
-  });
 }
 
 async function sendMagicLink() {
